@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/navigation_connection">
+
+    <fragment
+        android:id="@+id/navigation_connection"
+        android:name="com.example.mobile_p2pfl.ui.fragments.connection.ConnectionFragment"
+        android:label="@string/title_connection"
+        tools:layout="@layout/fragment_connection" />
+
+    <fragment
+        android:id="@+id/navigation_inference"
+        android:name="com.example.mobile_p2pfl.ui.fragments.inference.InferenceFragment"
+        android:label="@string/title_inference"
+        tools:layout="@layout/fragment_inference" />
+
+    <fragment
+        android:id="@+id/navigation_training"
+        android:name="com.example.mobile_p2pfl.ui.fragments.training.TrainingFragment"
+        android:label="@string/title_training"
+        tools:layout="@layout/fragment_training" />
+</navigation>

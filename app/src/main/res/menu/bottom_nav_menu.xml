@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/navigation_connection"
+        android:icon="@drawable/ic_connection_nav_24"
+        android:title="@string/title_connection" />
+
+    <item
+        android:id="@+id/navigation_inference"
+        android:icon="@drawable/ic_inference_nav_24"
+        android:title="@string/title_inference" />
+
+    <item
+        android:id="@+id/navigation_training"
+        android:icon="@drawable/ic_training_nav_24"
+        android:title="@string/title_training" />
+
+</menu>
