@@ -36,7 +36,7 @@ import kotlin.math.min
 class Trainer(
     private val context: Context,
     private var numThreads: Int = 2,
-    device: Device = Device.NNAPI//TODO temporal, cambiar a cpu
+    device: Device = Device.NNAPI// temporal, cambiar a cpu
 ) : TrainingInterface {
 
     //*****************VARIABLES*********************//

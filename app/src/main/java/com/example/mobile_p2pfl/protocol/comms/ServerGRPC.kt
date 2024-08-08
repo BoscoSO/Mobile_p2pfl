@@ -13,7 +13,7 @@ import kotlinx.coroutines.withContext
 
 class ServerGRPC : IServerConnection {
 
-    private var channel: ManagedChannel? = null //TODO
+    private var channel: ManagedChannel? = null
 
 
     override suspend fun connectToServer(uri: Uri): Boolean {
@@ -70,6 +70,6 @@ class ServerGRPC : IServerConnection {
     }
 
     override fun sendModel(): Boolean {
-        TODO("Not yet implemented")
+        return false
     }
 }

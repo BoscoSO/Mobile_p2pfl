@@ -12,5 +12,4 @@ interface IServerConnection {
 
     fun sendModel() : Boolean
 
- //TODO listeners?
 }
