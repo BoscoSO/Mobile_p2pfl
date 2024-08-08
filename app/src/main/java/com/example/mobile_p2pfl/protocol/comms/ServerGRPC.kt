@@ -59,9 +59,7 @@ class ServerGRPC : IServerConnection {
 
         if (channel == null)
             return false
-
         if (channel!!.getState(true) == ConnectivityState.READY) {
-
 
             return true
         }
