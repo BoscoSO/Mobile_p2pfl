@@ -85,6 +85,7 @@ class Trainer(
             val modelFile = FileUtil.loadMappedFile(context, MODEL_FILE_NAME)
 
             interpreter = Interpreter(modelFile, options)
+
             true
         } catch (e: IOException) {
             Log.e(TRAINER_LOG_TAG, "TFLite failed to load model with error: " + e.message)
@@ -191,7 +192,9 @@ class Trainer(
     }
 
     //*****************UTILS*******************//
-
+    fun getSamplesSize(): Int {
+        return samples.size
+    }
     // Train the model.
     private fun training(
         bottlenecks: MutableList<FloatArray>,
