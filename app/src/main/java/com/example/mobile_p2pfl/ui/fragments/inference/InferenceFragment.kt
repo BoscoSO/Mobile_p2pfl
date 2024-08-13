@@ -53,7 +53,7 @@ class InferenceFragment : Fragment() {
             classifier = Classifier(binding.root.context)
             Log.v(INFERENCE_FRAG_LOG_TAG, "Classifier initialized")
         } catch (e: IOException) {
-            Toast.makeText(binding.root.context, R.string.failed_to_create_classifier, Toast.LENGTH_LONG).show()
+            Toast.makeText(binding.root.context, R.string.exception_failed_to_create_classifier, Toast.LENGTH_LONG).show()
             Log.e(INFERENCE_FRAG_LOG_TAG, "init(): Failed to create Classifier", e)
         }
     }

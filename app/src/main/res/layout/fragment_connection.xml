@@ -8,77 +8,89 @@
     android:paddingEnd="12dp"
     tools:context=".ui.fragments.connection.ConnectionFragment">
 
-  <TextView
-      android:id="@+id/tv_status"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:textSize="20sp"
-      android:layout_margin="18dp"
-      android:text="@string/tv_status_text"
-      app:layout_constraintStart_toStartOf="parent"
-      app:layout_constraintTop_toTopOf="parent"/>
+    <TextView
+        android:id="@+id/tv_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="18dp"
+        android:text="@string/tv_status_text"
+        android:textSize="20sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-  <ImageView
-      android:id="@+id/icn_status_red"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:src="@drawable/baseline_circle_red_24"
-      android:backgroundTint="@color/inv"
-      android:layout_margin="20dp"
-      app:layout_constraintStart_toEndOf="@id/tv_status"
-      app:layout_constraintTop_toTopOf="parent"/>
+    <ImageView
+        android:id="@+id/icn_status_red"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="20dp"
+        android:backgroundTint="@color/inv"
+        android:src="@drawable/baseline_circle_red_24"
+        app:layout_constraintStart_toEndOf="@id/tv_status"
+        app:layout_constraintTop_toTopOf="parent" />
 
-  <ImageView
-      android:id="@+id/icn_status_green"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:src="@drawable/baseline_circle_green_24"
-      android:visibility="invisible"
-      android:backgroundTint="@color/inv"
-      android:layout_margin="20dp"
-      app:layout_constraintStart_toEndOf="@id/tv_status"
-      app:layout_constraintTop_toTopOf="parent"/>
+    <ImageView
+        android:id="@+id/icn_status_green"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="20dp"
+        android:backgroundTint="@color/inv"
+        android:src="@drawable/baseline_circle_green_24"
+        android:visibility="invisible"
+        app:layout_constraintStart_toEndOf="@id/tv_status"
+        app:layout_constraintTop_toTopOf="parent" />
 
-  <ImageButton
-      android:id="@+id/btn_connect"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:src="@drawable/baseline_sync_24"
-      android:backgroundTint="@color/inv"
-      android:contentDescription="@string/sync_button_description"
-      android:layout_margin="12dp"
-      app:layout_constraintTop_toTopOf="parent"
-      app:layout_constraintEnd_toEndOf="parent"/>
 
+    <ImageView
+        android:id="@+id/icn_status_loading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="20dp"
+        android:backgroundTint="@color/inv"
+        android:src="@drawable/ic_loading_circle_24"
+        app:layout_constraintStart_toEndOf="@id/tv_status"
+        app:layout_constraintTop_toTopOf="parent" />
+
+
+    <ImageButton
+        android:id="@+id/btn_connect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:backgroundTint="@color/inv"
+        android:contentDescription="@string/sync_button_description"
+        android:src="@drawable/baseline_sync_24"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 
     <Spinner
         android:id="@+id/sp_server_list"
-        android:entries="@array/servers_array"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="12dp"
+        android:entries="@array/servers_array"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_status"/>
+        app:layout_constraintTop_toBottomOf="@id/tv_status" />
 
-  <TextView
-      android:id="@+id/tv_connection_info"
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:layout_margin="12dp"
-      app:layout_constraintEnd_toEndOf="parent"
-      app:layout_constraintStart_toStartOf="parent"
-      app:layout_constraintTop_toBottomOf="@id/sp_server_list"
-      android:text="@string/lorem_ipsum"/>
-  <TextView
-      android:id="@+id/tv_connection_status"
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:layout_margin="12dp"
-      app:layout_constraintEnd_toEndOf="parent"
-      app:layout_constraintStart_toStartOf="parent"
-      app:layout_constraintTop_toBottomOf="@id/tv_connection_info"
-      android:text="status: "/>
+    <TextView
+        android:id="@+id/tv_connection_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:text="@string/lorem_ipsum"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/sp_server_list" />
+
+    <TextView
+        android:id="@+id/tv_connection_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:text="status: "
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_connection_info" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

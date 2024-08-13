@@ -4,9 +4,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AnimationUtils
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import com.example.mobile_p2pfl.R
+import com.example.mobile_p2pfl.R.anim.loading
 import com.example.mobile_p2pfl.databinding.FragmentConnectionBinding
 
 
@@ -29,7 +32,7 @@ class ConnectionFragment : Fragment() {
         _binding = FragmentConnectionBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-
+        binding.icnStatusLoading.startAnimation(AnimationUtils.loadAnimation(context, loading))
 
         return root
     }

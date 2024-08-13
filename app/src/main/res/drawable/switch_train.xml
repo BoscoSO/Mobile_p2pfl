@@ -6,8 +6,8 @@
 
     <item android:gravity="center"
         android:drawable="@drawable/switch_icons"
-        android:top="14dp"
-        android:bottom="14dp"
-        android:left="14dp"
-        android:right="14dp"/>
+        android:top="8dp"
+        android:bottom="8dp"
+        android:left="8dp"
+        android:right="8dp"/>
 </layer-list>
