@@ -23,9 +23,11 @@ protobuf {
                     option("lite")
                 }
             }
-//            task.plugins {
-//                id("grpc")
-//            }
+            task.plugins {
+                create("grpc") {
+                    option("lite")
+                }
+            }
 //
 //            task.generateDescriptorSet = true
 //            task.descriptorSetOptions.includeImports = true
@@ -87,6 +89,7 @@ android {
 dependencies {
 
 
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -115,6 +118,11 @@ dependencies {
     implementation(libs.grpc.stub)
     implementation(libs.annotation.javax.annotation.api)
     implementation(libs.protobuf.javalite)
+
+   // implementation(libs.protobuf.java)
+    implementation(libs.grpc.android)
+
+    implementation(libs.protobuf.gradle.plugin)
 
 
 }

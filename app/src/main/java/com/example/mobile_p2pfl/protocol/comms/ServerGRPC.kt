@@ -5,6 +5,8 @@ import android.util.Log
 import com.example.mobile_p2pfl.common.Values.GRPC_LOG_TAG
 import com.example.mobile_p2pfl.protocol.IServerConnection
 import com.example.mobile_p2pfl.protocol.proto.Node
+import com.example.mobile_p2pfl.protocol.proto.NodeServicesGrpc
+import com.example.mobile_p2pfl.protocol.proto.NodeServicesGrpc.NodeServicesStub
 import io.grpc.ConnectivityState
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
@@ -19,11 +21,14 @@ class ServerGRPC : IServerConnection {
 
     override suspend fun connectToServer(uri: Uri): Boolean {
 
-        //val stub: NodesServicesGrpc.MyServiceBlockingStub = NodesServicesGrpc.newBlockingStub(channel)
-        //val request: HandShakeRequest = HandShakeRequest.newBuilder().setName("World").build()
-        //val response: ResponseMessage = stub.sayHello(request)
+        val stub: NodeServicesGrpc.NodeServicesBlockingStub? =
+            NodeServicesGrpc.newBlockingStub(channel)
 
-        //var a : Node.HandShakeRequest = Node.HandShakeRequest.newBuilder().setAddr("World").build()
+        val request: Node.HandShakeRequest =
+            Node.HandShakeRequest.newBuilder().setAddr("Hello World").build()
+        //val response: Node.ResponseMessage = stub.sayHello(request)
+        val msg: Node.Message = Node.Message.newBuilder().setCmd("Hello World").build()
+        //TODO como se montan los mensajes, que llevan
 
         return withContext(Dispatchers.IO) {
             try {
