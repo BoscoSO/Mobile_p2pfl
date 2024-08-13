@@ -1,6 +1,38 @@
+import com.google.protobuf.gradle.id
+
 plugins {
+    id("com.google.protobuf") version "0.9.4"
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+
+}
+//Grpc plugin
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:4.26.0"
+    }
+    plugins {
+        id("grpc") {
+            artifact = "io.grpc:protoc-gen-grpc-java:1.43.0"
+        }
+    }
+    generateProtoTasks {
+        all().forEach { task ->
+            task.builtins {
+                create("java") {
+                    option("lite")
+                }
+            }
+//            task.plugins {
+//                id("grpc")
+//            }
+//
+//            task.generateDescriptorSet = true
+//            task.descriptorSetOptions.includeImports = true
+//            task.descriptorSetOptions.path =
+//                "$rootDir/app/src/main/proto/app.desc"
+        }
+    }
 
 
 }
@@ -18,6 +50,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         /*
+        // filtro de arquitectura
         ndk {
             abiFilters += listOf("armeabi-v7a", "arm64-v8a")
         }*/
@@ -33,11 +66,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
     buildFeatures {
         viewBinding = true
@@ -47,9 +80,12 @@ android {
     androidResources {
         noCompress += listOf("tflite", "lite")
     }
+
+
 }
 
 dependencies {
+
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -60,9 +96,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.espresso.remote)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
 
     //tflite
     implementation(libs.tensorflow.lite)
@@ -74,11 +110,15 @@ dependencies {
     implementation(libs.finger.paint.view)
 
     //GRPC
-    implementation(libs.grpc.stub)
-    implementation(libs.grpc.grpc.protobuf)
     implementation(libs.grpc.okhttp)
-    implementation(libs.protoc.gen.grpc.kotlin)
-    implementation(libs.grpc.kotlin.stub)
-    implementation(libs.protobuf.kotlin)
+    implementation(libs.grpc.protobuf.lite)
+    implementation(libs.grpc.stub)
+    implementation(libs.annotation.javax.annotation.api)
+    implementation(libs.protobuf.javalite)
+
+
+}
+
+tasks.withType<com.google.protobuf.gradle.GenerateProtoTask> {
 
 }

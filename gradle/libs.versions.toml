@@ -1,50 +1,40 @@
 [versions]
 agp = "8.5.1"
-fingerPaintView = "0.3.1"
-grpcProtobuf = "1.52.1"
-grpcStub = "1.52.1"
+javaxAnnotationApi = "1.3.2"
 kotlin = "1.9.0"
 coreKtx = "1.13.1"
 junit = "4.13.2"
 junitVersion = "1.2.1"
-espressoCore = "3.6.1"
 appcompat = "1.7.0"
 material = "1.12.0"
 constraintlayout = "2.1.4"
 navigationFragmentKtx = "2.7.7"
 navigationUiKtx = "2.7.7"
-protobufKotlin = "3.21.12"
-protocGenGrpcKotlin = "1.3.0"
-tensorflowLite = "2.9.0"
-lifecycleLivedataKtx = "2.6.1"
-lifecycleViewmodelKtx = "2.6.1"
-tensorflowLiteGpu = "2.3.0"
-tensorflowLiteSupport = "0.4.2"
 cameraView = "1.3.4"
+espressoRemote = "3.6.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+annotation-javax-annotation-api = { module = "javax.annotation:javax.annotation-api", version.ref = "javaxAnnotationApi" }
 finger-paint-view = { module = "com.nex3z:finger-paint-view", version = "0.3.1" }
-grpc-grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "grpcProtobuf" }
-grpc-kotlin-stub = { module = "io.grpc:grpc-kotlin-stub", version.ref = "protocGenGrpcKotlin" }
-grpc-okhttp = { module = "io.grpc:grpc-okhttp", version.ref = "grpcProtobuf" }
-grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpcStub" }
+grpc-okhttp = { module = "io.grpc:grpc-okhttp", version = "1.66.0" }
+grpc-protobuf-lite = { module = "io.grpc:grpc-protobuf-lite", version = "1.66.0" }
+grpc-stub = { module = "io.grpc:grpc-stub", version = "1.66.0" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
-androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 androidx-navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigationFragmentKtx" }
 androidx-navigation-ui-ktx = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigationUiKtx" }
-protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "protobufKotlin" }
-protoc-gen-grpc-kotlin = { module = "io.grpc:protoc-gen-grpc-kotlin", version.ref = "protocGenGrpcKotlin" }
-tensorflow-lite = { module = "org.tensorflow:tensorflow-lite", version.ref = "tensorflowLite" }
-androidx-lifecycle-livedata-ktx = { group = "androidx.lifecycle", name = "lifecycle-livedata-ktx", version.ref = "lifecycleLivedataKtx" }
-androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycleViewmodelKtx" }
-tensorflow-lite-gpu = { module = "org.tensorflow:tensorflow-lite-gpu", version.ref = "tensorflowLiteGpu" }
-tensorflow-lite-support = { module = "org.tensorflow:tensorflow-lite-support", version.ref = "tensorflowLiteSupport" }
+protobuf-javalite = { module = "com.google.protobuf:protobuf-javalite", version = "4.27.3" }
+tensorflow-lite = { module = "org.tensorflow:tensorflow-lite", version = "2.16.1" }
+androidx-lifecycle-livedata-ktx = { group = "androidx.lifecycle", name = "lifecycle-livedata-ktx", version = "2.8.4" }
+androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version = "2.8.4" }
+tensorflow-lite-gpu = { module = "org.tensorflow:tensorflow-lite-gpu", version = "2.16.1" }
+tensorflow-lite-support = { module = "org.tensorflow:tensorflow-lite-support", version = "0.4.4" }
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraView" }
+androidx-espresso-remote = { group = "androidx.test.espresso", name = "espresso-remote", version.ref = "espressoRemote" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

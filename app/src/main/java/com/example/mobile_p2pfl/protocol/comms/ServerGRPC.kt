@@ -4,6 +4,7 @@ import android.net.Uri
 import android.util.Log
 import com.example.mobile_p2pfl.common.Values.GRPC_LOG_TAG
 import com.example.mobile_p2pfl.protocol.IServerConnection
+import com.example.mobile_p2pfl.protocol.proto.Node
 import io.grpc.ConnectivityState
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
@@ -17,6 +18,13 @@ class ServerGRPC : IServerConnection {
 
 
     override suspend fun connectToServer(uri: Uri): Boolean {
+
+        //val stub: NodesServicesGrpc.MyServiceBlockingStub = NodesServicesGrpc.newBlockingStub(channel)
+        //val request: HandShakeRequest = HandShakeRequest.newBuilder().setName("World").build()
+        //val response: ResponseMessage = stub.sayHello(request)
+
+        //var a : Node.HandShakeRequest = Node.HandShakeRequest.newBuilder().setAddr("World").build()
+
         return withContext(Dispatchers.IO) {
             try {
                 if (channel != null) {
@@ -42,6 +50,7 @@ class ServerGRPC : IServerConnection {
                 Log.e(GRPC_LOG_TAG, "Connection failed: " + e.message.toString())
                 return@withContext false
             }
+
         }
     }
 
