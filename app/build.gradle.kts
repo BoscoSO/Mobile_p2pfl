@@ -76,7 +76,6 @@ android {
     }
     buildFeatures {
         viewBinding = true
-        mlModelBinding = true
 
     }
 
@@ -101,7 +100,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.espresso.remote)
-    implementation(libs.tensorflow.lite.metadata)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
 

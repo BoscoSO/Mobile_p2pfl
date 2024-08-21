@@ -1,7 +1,6 @@
 package com.example.mobile_p2pfl.ui.fragments.inference
 
 import android.graphics.Bitmap
-import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -12,16 +11,10 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.mobile_p2pfl.R
 import com.example.mobile_p2pfl.ai.inference.Classifier
-import com.example.mobile_p2pfl.ai.training.TfliteModelController
-import com.example.mobile_p2pfl.ai.training.TfliteModelLoader
-import com.example.mobile_p2pfl.common.Constants.MODEL_FILE_NAME
 import com.example.mobile_p2pfl.common.Recognition
 import com.example.mobile_p2pfl.common.Values.INFERENCE_FRAG_LOG_TAG
 import com.example.mobile_p2pfl.databinding.FragmentInferenceBinding
-import java.io.File
-import java.io.FileOutputStream
 import java.io.IOException
-import java.nio.channels.GatheringByteChannel
 
 class InferenceFragment : Fragment() {
 
