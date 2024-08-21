@@ -136,6 +136,8 @@ class TrainingFragment : Fragment() {
         } else {
             trainingViewModel._trainer.value?.pauseTraining()
             trainingViewModel._isTraining.value = false
+            trainingViewModel._trainer.value?.saveModelWeights()
+
             Log.v(TRAINER_FRAG_LOG_TAG, "Training paused")
         }
 
@@ -164,7 +166,6 @@ class TrainingFragment : Fragment() {
             return false
         }
     }
-
 
     private fun addSampleClickListener() {
         val trainer = trainingViewModel._trainer.value!!

@@ -12,51 +12,54 @@ import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import java.net.URI
 
 class ServerGRPC : IServerConnection {
 
     private var channel: ManagedChannel? = null
 
 
-    override suspend fun connectToServer(uri: Uri): Boolean {
-
-        val stub: NodeServicesGrpc.NodeServicesBlockingStub? =
-            NodeServicesGrpc.newBlockingStub(channel)
-
-        val request: Node.HandShakeRequest =
-            Node.HandShakeRequest.newBuilder().setAddr("Hello World").build()
-        //val response: Node.ResponseMessage = stub.sayHello(request)
-        val msg: Node.Message = Node.Message.newBuilder().setCmd("Hello World").build()
-        //TODO como se montan los mensajes, que llevan
-
-        return withContext(Dispatchers.IO) {
-            try {
-                if (channel != null) {
-                    return@withContext channel!!.getState(true) == ConnectivityState.READY
-                }
-                channel = let {
-                    Log.d(GRPC_LOG_TAG, "Connecting to ${uri.host}:${uri.port}")
-
-                    val builder = ManagedChannelBuilder.forAddress(uri.host, uri.port)
-                    if (uri.scheme == "https") {
-                        builder.useTransportSecurity()
-                    } else {
-                        builder.usePlaintext()
-                    }
-
-                    builder.executor(Dispatchers.IO.asExecutor()).build()
-                }
-
-                Log.d(GRPC_LOG_TAG, "Connected")
-                return@withContext (channel!!.getState(true) == ConnectivityState.READY)
-            } catch (e: Exception) {
-
-                Log.e(GRPC_LOG_TAG, "Connection failed: " + e.message.toString())
-                return@withContext false
+    override suspend fun connectToServer(uri: Uri): Boolean = withContext(Dispatchers.IO) {
+        try {
+            if (channel != null && channel!!.getState(true) == ConnectivityState.READY) {
+                return@withContext true
             }
 
+            channel = ManagedChannelBuilder.forAddress(uri.host, uri.port).apply {
+                if (uri.scheme == "https") {
+                    useTransportSecurity()
+                } else {
+                    usePlaintext()
+                }
+                executor(Dispatchers.IO.asExecutor())
+            }.build()
+
+            Log.d(GRPC_LOG_TAG, "Connecting to ${uri.host}:${uri.port}")
+
+            var i = 0
+            // Espera hasta que el estado sea READY
+            while (channel!!.getState(true) != ConnectivityState.READY) {
+                Log.d(GRPC_LOG_TAG, "Esperando que la conexión esté lista...")
+                delay(100) // Espera 100 ms antes de volver a comprobar
+                if(i++>40) return@withContext false // Si ha pasado más de 4 segundos, devuelve false
+            }
+
+            Log.d(GRPC_LOG_TAG, "Connected")
+            return@withContext true
+        } catch (e: Exception) {
+            Log.e(GRPC_LOG_TAG, "Connection failed: ${e.message}")
+            return@withContext false
         }
+    }
+
+
+    fun checkConnection(): Boolean {
+        if (channel != null) {
+            return channel!!.getState(true) == ConnectivityState.READY
+        }
+        return false
     }
 
     override fun disconnect(): Boolean {
@@ -71,13 +74,9 @@ class ServerGRPC : IServerConnection {
 
     override fun fetchModel(): Boolean {
 
-        if (channel == null)
-            return false
-        if (channel!!.getState(true) == ConnectivityState.READY) {
-
-            return true
+        if (channel != null) {
+            return channel!!.getState(true) == ConnectivityState.READY
         }
-
         return false
     }
 
