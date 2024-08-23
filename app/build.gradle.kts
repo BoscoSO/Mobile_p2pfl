@@ -17,10 +17,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        /*
-        ndk {
-            abiFilters += listOf("armeabi-v7a", "arm64-v8a")
-        }*/
+
+//        ndk {
+//            abiFilters += listOf("armeabi-v7a", "arm64-v8a")
+//        }
     }
 
     buildTypes {
@@ -41,6 +41,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+      //  mlModelBinding = true
 
     }
 
@@ -48,7 +49,6 @@ android {
         noCompress += listOf("tflite", "lite")
     }
 }
-
 dependencies {
 
     implementation(libs.androidx.core.ktx)
@@ -66,9 +66,16 @@ dependencies {
 
     //tflite
     implementation(libs.tensorflow.lite)
-
     implementation(libs.tensorflow.lite.gpu)
     implementation(libs.tensorflow.lite.support)
+
+    //implementation(libs.tensorflow.lite.metadata)
+
+    //nueva
+    implementation(libs.tensorflow.lite.select.tf.ops)// 2.9.0 version
+    //implementation("org.tensorflow:tensorflow-lite-select-tf-ops:2.16.1")
+
+    //implementation(files("libs/tensorflow-lite-select-tf-ops-2.16.1.aar"))
 
     //paintdrawing
     implementation(libs.finger.paint.view)

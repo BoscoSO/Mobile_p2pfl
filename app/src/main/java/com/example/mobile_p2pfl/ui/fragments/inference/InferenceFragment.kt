@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.mobile_p2pfl.R
 import com.example.mobile_p2pfl.ai.inference.Classifier
+import com.example.mobile_p2pfl.ai.ml_controller.LearningModel
 import com.example.mobile_p2pfl.common.Recognition
 import com.example.mobile_p2pfl.common.Values.INFERENCE_FRAG_LOG_TAG
 import com.example.mobile_p2pfl.databinding.FragmentInferenceBinding
@@ -22,7 +23,7 @@ class InferenceFragment : Fragment() {
 
     private val binding get() = _binding!!
 
-    private lateinit var classifier: Classifier
+    private lateinit var classifier: LearningModel
 
 
     override fun onCreateView(
@@ -50,7 +51,9 @@ class InferenceFragment : Fragment() {
 
     private fun initClassifier() {
         try {
-            classifier = Classifier(binding.root.context)
+            //
+            // classifier = Classifier(binding.root.context)
+            classifier = LearningModel(binding.root.context)
             Log.v(INFERENCE_FRAG_LOG_TAG, "Classifier initialized")
         } catch (e: IOException) {
             Toast.makeText(binding.root.context, R.string.exception_failed_to_create_classifier, Toast.LENGTH_LONG).show()
@@ -74,7 +77,7 @@ class InferenceFragment : Fragment() {
         }
 
         val image: Bitmap = binding.fpvInferenceDraw.exportToBitmap(
-            classifier.getInputShape().width, classifier.getInputShape().height
+            28,28
         )
         val result = classifier.classify(image)
         renderResult(result)

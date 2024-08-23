@@ -11,6 +11,7 @@ import com.example.mobile_p2pfl.common.Device
 import com.example.mobile_p2pfl.common.Recognition
 import com.example.mobile_p2pfl.common.Values.INFERENCE_LOG_TAG
 import com.example.mobile_p2pfl.common.Values.TRAINER_LOG_TAG
+import com.example.mobile_p2pfl.common.getMappedModel
 import org.tensorflow.lite.Delegate
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.Tensor
@@ -80,7 +81,9 @@ class Classifier(
         delegate?.let { options.delegates.add(it) }
 
         return try {
-            val modelFile = FileUtil.loadMappedFile(context, MODEL_FILE_NAME)
+            //val modelFile = FileUtil.loadMappedFile(context, MODEL_FILE_NAME)
+
+            val modelFile = getMappedModel(context)
             interpreter = Interpreter(modelFile, options)
             true
         } catch (e: IOException) {

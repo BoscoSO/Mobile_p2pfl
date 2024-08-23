@@ -107,7 +107,7 @@ class Trainer(
             val label = FloatArray(10) { 0f }
             label[number] = 1f
 
-            samples.add(TrainingSample(imageFeatures, label))
+            //samples.add(TrainingSample(imageFeatures, number)) // TODO es label, pero label tiene que ser el floatarray
 
         }
     }
@@ -152,10 +152,10 @@ class Trainer(
                             MutableList(trainBatchSize) { FloatArray(VALUES_OUTPUTS_SIZE) }
 
                         // Copy a training sample list into two different input training lists.
-                        trainingSamples.forEachIndexed { i, sample ->
-                            trainingBatchBottlenecks[i] = sample.bottleneck
-                            trainingBatchLabels[i] = sample.label
-                        }
+//                        trainingSamples.forEachIndexed { i, sample ->
+//                            trainingBatchBottlenecks[i] = sample.bottleneck
+//                            trainingBatchLabels[i] = sample.bottleneck // TODO es label, pero label tiene que ser el floatarray
+//                        }
                         val loss: FloatArray = training(trainingBatchBottlenecks, trainingBatchLabels)
 
 
@@ -192,9 +192,16 @@ class Trainer(
     }
 
     //*****************UTILS*******************//
-    fun getSamplesSize(): Int {
+    override fun getSamplesSize(): Int {
         return samples.size
     }
+    // Returns the input shape of the model.
+    override fun getInputShape(): Size {
+        return Size(targetWidth, targetHeight)
+    }
+
+
+
     // Train the model.
     private fun training(
         bottlenecks: MutableList<FloatArray>,
@@ -314,10 +321,7 @@ class Trainer(
         }
     }
 
-    // Returns the input shape of the model.
-    fun getInputShape(): Size {
-        return Size(targetWidth, targetHeight)
-    }
+
 
     //*****************CONSTANTS*******************//
     companion object {

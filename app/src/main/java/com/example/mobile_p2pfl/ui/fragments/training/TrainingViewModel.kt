@@ -1,15 +1,15 @@
 package com.example.mobile_p2pfl.ui.fragments.training
 
-import android.content.Context
 import android.graphics.Bitmap
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.mobile_p2pfl.ai.training.Trainer
+import com.example.mobile_p2pfl.ai.TrainingInterface
+import com.example.mobile_p2pfl.ai.ml_controller.LearningModel
 
 class TrainingViewModel() : ViewModel() {
     // trainer variable to store the Trainer object
-    val _trainer = MutableLiveData<Trainer>().apply {
+    val _trainer = MutableLiveData<LearningModel>().apply {
         value=null
     }
 

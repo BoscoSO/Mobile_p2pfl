@@ -12,7 +12,9 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.mobile_p2pfl.R
-import com.example.mobile_p2pfl.ai.training.Trainer
+import com.example.mobile_p2pfl.ai.ml_controller.LearningModel
+import com.example.mobile_p2pfl.ai.ml_controller.LearningModel.Companion.IMG_SIZE
+import com.example.mobile_p2pfl.ai.training.ModelControllerWithSignatures
 import com.example.mobile_p2pfl.common.Values.TRAINER_FRAG_LOG_TAG
 import com.example.mobile_p2pfl.databinding.FragmentTrainingBinding
 import java.io.IOException
@@ -58,7 +60,8 @@ class TrainingFragment : Fragment() {
         } else
             try {
                 trainingViewModel._trainer.value =
-                    Trainer(binding.root.context, numThreads) //, Device.CPU
+                    LearningModel(binding.root.context, numThreads) //, Device.CPU
+                    //Trainer(binding.root.context, numThreads) //, Device.CPU
 
                 if (trainingViewModel._oldTrainningSamples.value!!.isNotEmpty()) {
                     trainingViewModel._trainningSamples.value =
@@ -167,9 +170,9 @@ class TrainingFragment : Fragment() {
 
 
     private fun addSampleClickListener() {
-        val trainer = trainingViewModel._trainer.value!!
+        //val trainer = trainingViewModel._trainer.value!!
         val image: Bitmap = binding.fpvInferenceDraw.exportToBitmap(
-            trainer.getInputShape().width, trainer.getInputShape().height
+            IMG_SIZE,IMG_SIZE
         )
         val number = binding.npNumber.value
 

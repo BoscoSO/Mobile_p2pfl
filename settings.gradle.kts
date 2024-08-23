@@ -8,7 +8,15 @@ pluginManagement {
             }
         }
         mavenCentral()
+//        maven {
+//            name = "ossrh-snapshot"  // Only for snapshot artifacts
+//            url = uri("https://oss.sonatype.org/content/repositories/snapshots")
+//        }
+        mavenLocal()
         gradlePluginPortal()
+//        flatDir {
+//            dirs("libs")
+//        }
     }
 }
 dependencyResolutionManagement {
@@ -16,9 +24,15 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+//        maven {
+//            name = "ossrh-snapshot"  // Only for snapshot artifacts
+//            url = uri("https://oss.sonatype.org/content/repositories/snapshots")
+//        }
+        mavenLocal()
     }
 }
 
 rootProject.name = "Mobile_p2pfl"
 include(":app")
- 
+
+
