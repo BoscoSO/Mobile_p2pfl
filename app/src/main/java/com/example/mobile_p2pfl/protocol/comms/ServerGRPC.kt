@@ -4,7 +4,6 @@ import android.net.Uri
 import android.util.Log
 import com.example.mobile_p2pfl.common.Values.GRPC_LOG_TAG
 import com.example.mobile_p2pfl.protocol.IServerConnection
-import com.example.mobile_p2pfl.protocol.proto.Node
 import com.example.mobile_p2pfl.protocol.proto.NodeServicesGrpc
 import io.grpc.ConnectivityState
 import io.grpc.ManagedChannel
@@ -62,12 +61,12 @@ class ServerGRPC : IServerConnection {
     }
 
 
-    fun checkConnection(): Boolean {
-        if (channel != null) {
-            return channel!!.getState(true) == ConnectivityState.READY
-        }
-        return false
-    }
+//    fun checkConnection(): Boolean {
+//        if (channel != null) {
+//            return channel!!.getState(true) == ConnectivityState.READY
+//        }
+//        return false
+//    }
 
     override fun disconnect(): Boolean {
         if (channel != null) {
