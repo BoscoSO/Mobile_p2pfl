@@ -15,6 +15,9 @@ interface LearningModelController : Closeable {
 
     fun pauseTraining()
 
-
     fun getSamplesSize(): Int
+
+    fun saveModel()
+
+    fun restoreModel()
 }

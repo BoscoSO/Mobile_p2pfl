@@ -1,10 +1,10 @@
-package com.example.mobile_p2pfl.ai.training
+package com.example.mobile_p2pfl.ai.testing
 
 import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import android.util.Size
-import com.example.mobile_p2pfl.ai.TrainingInterface
+import com.example.mobile_p2pfl.ai.testing.inicial.TrainingInterface
 import com.example.mobile_p2pfl.common.Constants.MODEL_FILE_NAME
 import com.example.mobile_p2pfl.common.Device
 import com.example.mobile_p2pfl.common.TrainingSample

@@ -10,8 +10,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.mobile_p2pfl.R
-import com.example.mobile_p2pfl.ai.inference.Classifier
-import com.example.mobile_p2pfl.ai.ml_controller.LearningModel
+import com.example.mobile_p2pfl.ai.controller.LearningModel
 import com.example.mobile_p2pfl.common.Recognition
 import com.example.mobile_p2pfl.common.Values.INFERENCE_FRAG_LOG_TAG
 import com.example.mobile_p2pfl.databinding.FragmentInferenceBinding

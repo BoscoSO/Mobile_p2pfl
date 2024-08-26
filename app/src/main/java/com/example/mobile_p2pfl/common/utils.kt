@@ -2,8 +2,8 @@ package com.example.mobile_p2pfl.common
 
 import android.content.Context
 import android.util.Log
-import com.example.mobile_p2pfl.ai.inference.Classifier
-import com.example.mobile_p2pfl.ai.training.Trainer
+import com.example.mobile_p2pfl.ai.testing.inicial.Classifier
+import com.example.mobile_p2pfl.ai.testing.inicial.Trainer
 import com.example.mobile_p2pfl.common.Constants.MODEL_FILE_NAME
 import com.example.mobile_p2pfl.protocol.comms.ServerGRPC
 import com.example.mobile_p2pfl.ui.fragments.inference.InferenceFragment

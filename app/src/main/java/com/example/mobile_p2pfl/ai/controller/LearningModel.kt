@@ -1,4 +1,4 @@
-package com.example.mobile_p2pfl.ai.ml_controller
+package com.example.mobile_p2pfl.ai.controller
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -19,7 +19,6 @@ import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.nio.FloatBuffer
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.max
@@ -34,31 +33,39 @@ class LearningModel(
 ) : LearningModelController {
 
 
-    //*****************VARIABLES*********************//
+    /*****************VARIABLES*********************/
 
+    // LearningModel TFLite interpreter
     private var interpreter: Interpreter? = null
 
+    // Executor for running inference
     private var executor: ExecutorService? = null
 
+    // List of training samples
+    private val trainingSamples = mutableListOf<TrainingSample>()
+
+    // Delegate for GPU acceleration
     private val delegate: Delegate? = when (device) {
         Device.CPU -> null
         Device.NNAPI -> NnApiDelegate()
         Device.GPU -> GpuDelegate()
     }
 
-
+    // Lock for thread-safety
     private val lock = Any()
-    private val trainingSamples = mutableListOf<TrainingSample>()
 
 
-    //*****************SETUP*********************//
+    /*****************SETUP*********************/
+
+    // Initialize LearningModel TFLite interpreter.
     init {
         if (!initModelInterpreter()) {
             Log.e(TRAINER_LOG_TAG, "TFLite failed to init.")
-        }else
+        } else
             restoreModel()
     }
 
+    // Initialize the TFLite interpreter.
     private fun initModelInterpreter(): Boolean {
         val options = Interpreter.Options()
         options.numThreads = numThreads
@@ -66,7 +73,6 @@ class LearningModel(
         delegate?.let { options.delegates.add(it) }
 
         return try {
-            //val modelFile = FileUtil.loadMappedFile(context, MODEL_FILE_NAME)
             val modelFile = getMappedModel(context)
             interpreter = Interpreter(modelFile, options)
             true
@@ -76,70 +82,55 @@ class LearningModel(
         }
     }
 
-    /***************UTILS********************/
-    private fun preprocessImage(bitmap: Bitmap): ByteBuffer {
-        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, 28, 28, true)
-        val byteBuffer = ByteBuffer.allocateDirect(4 * 28 * 28).apply {
-            order(ByteOrder.nativeOrder())
-        }
-        val pixels = IntArray(28 * 28)
-        resizedBitmap.getPixels(pixels, 0, 28, 0, 0, 28, 28)
-
-        for (pixelValue in pixels) {
-            byteBuffer.putFloat(convertPixel(pixelValue))
-        }
-        return byteBuffer
-    }
-
-    private fun convertPixel(color: Int): Float {
-        return (255 - ((color shr 16 and 0xFF) * 0.299f
-                + (color shr 8 and 0xFF) * 0.587f
-                + (color and 0xFF) * 0.114f)) / 255.0f
-    }
 
     /***************OVERRIDE*****************/
+
+    // Classify the input image
     override fun classify(image: Bitmap): Recognition {
+        synchronized(lock) {
+            try {
+                val inputImageBuffer = preprocessImage(image)
+                val outputProbabilityBuffer =
+                    TensorBuffer.createFixedSize(
+                        intArrayOf(1, CLASSES),
+                        org.tensorflow.lite.DataType.FLOAT32
+                    )
 
+                val timeCost = measureTimeMillis {
+                    val inputs = mapOf(
+                        "x" to inputImageBuffer
+                    )
+                    val outputs = mutableMapOf<String, Any>(
+                        "output" to outputProbabilityBuffer.buffer
+                    )
+                    interpreter!!.runSignature(inputs, outputs, "infer")
+                }
 
-        try {
-            val inputImageBuffer = preprocessImage(image)
-            val outputProbabilityBuffer =
-                TensorBuffer.createFixedSize(
-                    intArrayOf(1, 10),
-                    org.tensorflow.lite.DataType.FLOAT32
-                )
+                val outputArray = outputProbabilityBuffer.floatArray
+                val maxIdx = outputArray.indices.maxByOrNull { outputArray[it] } ?: -1
+                val confidence = outputArray[maxIdx]
 
-            val timeCost = measureTimeMillis {
-                val inputs = mapOf(
-                    "x" to inputImageBuffer
-                )
-                val outputs = mutableMapOf<String, Any>(
-                    "output" to outputProbabilityBuffer.buffer
-                )
-                interpreter!!.runSignature(inputs, outputs, "infer")
+                return Recognition(label = maxIdx, confidence = confidence, timeCost = timeCost)
+            } finally {
+
             }
-
-            val outputArray = outputProbabilityBuffer.floatArray
-            val maxIdx = outputArray.indices.maxByOrNull { outputArray[it] } ?: -1
-            val confidence = outputArray[maxIdx]
-
-            return Recognition(label = maxIdx, confidence = confidence, timeCost = timeCost)
-        } finally {
-
         }
     }
 
+    // Add a training sample to the list.
     override fun addTrainingSample(image: Bitmap, number: Int) {
         val inputImageBuffer = preprocessImage(image)
         val trainingSample = TrainingSample(inputImageBuffer, number)
         trainingSamples.add(trainingSample)
     }
 
+    // Get the number of training samples.
     override fun getSamplesSize(): Int {
         return trainingSamples.size
     }
 
-    //TODO de uno en uno
+    // Start the training process.
+    // With one sample at a time
     override fun startTraining() {
         if (interpreter == null) {
             initModelInterpreter()
@@ -213,7 +204,8 @@ class LearningModel(
         }
     }
 
-    //TODO de batch en batch
+    // Start the training process.
+    // With all samples at once (does not work)
     fun startTraining2() {
         if (interpreter == null) {
             initModelInterpreter()
@@ -299,8 +291,14 @@ class LearningModel(
         }
     }
 
+    // Pause the training process.
+    override fun pauseTraining() {
+        executor?.shutdownNow()
+        saveModel()
+    }
 
-    private fun saveModel() {
+    // Save the model to the checkpoint
+    override fun saveModel() {
         val outputFile = File(context.filesDir, "checkpoint.ckpt")
         val inputs: MutableMap<String, Any> = HashMap()
         inputs["checkpoint_path"] = outputFile.absolutePath
@@ -310,24 +308,21 @@ class LearningModel(
 
     }
 
-    private fun restoreModel() {
+    // Restore the model from the checkpoint
+    override fun restoreModel() {
         val outputFile = File(context.filesDir, "checkpoint.ckpt")
-         if(outputFile.exists()){
-             val inputs: MutableMap<String, Any> = HashMap()
-             inputs["checkpoint_path"] = outputFile.absolutePath
-             val outputs: Map<String, Any> = HashMap()
-             interpreter!!.runSignature(inputs, outputs, "restore")
-             Log.d(TRAINER_LOG_TAG, "Model loaded")
-         }else{
-             Log.e(TRAINER_LOG_TAG, "cant load model")
-         }
+        if (outputFile.exists()) {
+            val inputs: MutableMap<String, Any> = HashMap()
+            inputs["checkpoint_path"] = outputFile.absolutePath
+            val outputs: Map<String, Any> = HashMap()
+            interpreter!!.runSignature(inputs, outputs, "restore")
+            Log.d(TRAINER_LOG_TAG, "Model loaded")
+        } else {
+            Log.e(TRAINER_LOG_TAG, "cant load model")
+        }
     }
 
-    override fun pauseTraining() {
-        executor?.shutdownNow()
-        saveModel()
-    }
-
+    // Close the TFLite interpreter.
     override fun close() {
         executor?.shutdownNow()
         interpreter?.close()
@@ -338,6 +333,32 @@ class LearningModel(
         }
     }
 
+
+    /***************UTILS********************/
+
+    // Preprocess the input image to byte buffer for model input
+    private fun preprocessImage(bitmap: Bitmap): ByteBuffer {
+        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, IMG_SIZE, IMG_SIZE, true)
+        val byteBuffer = ByteBuffer.allocateDirect(FLOAT_SIZE * IMG_SIZE * IMG_SIZE).apply {
+            order(ByteOrder.nativeOrder())
+        }
+        val pixels = IntArray(IMG_SIZE * IMG_SIZE)
+        resizedBitmap.getPixels(pixels, 0, 28, 0, 0, IMG_SIZE, IMG_SIZE)
+
+        for (pixelValue in pixels) {
+            byteBuffer.putFloat(convertPixel(pixelValue))
+        }
+        return byteBuffer
+    }
+
+    // Convert RGB to grayscale
+    private fun convertPixel(color: Int): Float {
+        return (255 - ((color shr 16 and 0xFF) * 0.299f
+                + (color shr 8 and 0xFF) * 0.587f
+                + (color and 0xFF) * 0.114f)) / 255.0f
+    }
+
+    // Create a batch of training samples
     private fun trainingBatchesIterator(trainBatchSize: Int): Iterator<List<TrainingSample>> {
 
         return object : Iterator<List<TrainingSample>> {
@@ -367,7 +388,11 @@ class LearningModel(
     }
 
 
+    /*****************CONSTANTS********************/
     companion object {
+
+        const val FLOAT_SIZE = 4
+        const val CLASSES = 10
         const val IMG_SIZE = 28
         const val BATCH_SIZE = 20
 

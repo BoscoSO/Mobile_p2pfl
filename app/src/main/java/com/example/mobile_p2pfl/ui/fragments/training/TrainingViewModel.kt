@@ -4,8 +4,7 @@ import android.graphics.Bitmap
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.mobile_p2pfl.ai.TrainingInterface
-import com.example.mobile_p2pfl.ai.ml_controller.LearningModel
+import com.example.mobile_p2pfl.ai.controller.LearningModel
 
 class TrainingViewModel() : ViewModel() {
     // trainer variable to store the Trainer object

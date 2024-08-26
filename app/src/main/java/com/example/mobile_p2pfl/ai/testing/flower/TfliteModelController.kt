@@ -1,4 +1,4 @@
-package com.example.mobile_p2pfl.ai.training;
+package com.example.mobile_p2pfl.ai.testing;
 
 import android.graphics.Bitmap
 import android.util.Log

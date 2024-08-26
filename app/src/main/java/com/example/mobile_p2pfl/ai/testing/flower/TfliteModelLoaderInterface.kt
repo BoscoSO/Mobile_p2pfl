@@ -1,7 +1,7 @@
 
 package com.example.mobile_p2pfl.ai.temp
 
-import com.example.mobile_p2pfl.ai.training.TfLiteModel
+import com.example.mobile_p2pfl.ai.testing.TfLiteModel
 import java.io.IOException
 
 // Interface for loading a TFLite model.

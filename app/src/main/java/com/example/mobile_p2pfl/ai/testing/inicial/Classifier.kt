@@ -1,12 +1,10 @@
-package com.example.mobile_p2pfl.ai.inference
+package com.example.mobile_p2pfl.ai.testing.inicial
 
 import android.content.Context
 import android.graphics.Bitmap
 import android.os.SystemClock
 import android.util.Log
 import android.util.Size
-import com.example.mobile_p2pfl.ai.InferenceInterface
-import com.example.mobile_p2pfl.common.Constants.MODEL_FILE_NAME
 import com.example.mobile_p2pfl.common.Device
 import com.example.mobile_p2pfl.common.Recognition
 import com.example.mobile_p2pfl.common.Values.INFERENCE_LOG_TAG
@@ -17,7 +15,6 @@ import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.Tensor
 import org.tensorflow.lite.gpu.GpuDelegate
 import org.tensorflow.lite.nnapi.NnApiDelegate
-import org.tensorflow.lite.support.common.FileUtil
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.io.Closeable
 import java.io.IOException

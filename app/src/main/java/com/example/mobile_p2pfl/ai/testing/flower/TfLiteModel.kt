@@ -1,5 +1,5 @@
 
-package com.example.mobile_p2pfl.ai.training;
+package com.example.mobile_p2pfl.ai.testing;
 
 import java.io.Closeable;
 import java.nio.ByteBuffer;

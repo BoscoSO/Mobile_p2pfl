@@ -1,9 +1,9 @@
-package com.example.mobile_p2pfl.ai.training;
+package com.example.mobile_p2pfl.ai.testing;
 
 import android.graphics.Bitmap
 import android.os.SystemClock
 import android.util.Log
-import com.example.mobile_p2pfl.ai.inference.argMax
+import com.example.mobile_p2pfl.ai.testing.inicial.argMax
 import com.example.mobile_p2pfl.common.Recognition
 import com.example.mobile_p2pfl.common.Values.INFERENCE_LOG_TAG
 import org.tensorflow.lite.Tensor

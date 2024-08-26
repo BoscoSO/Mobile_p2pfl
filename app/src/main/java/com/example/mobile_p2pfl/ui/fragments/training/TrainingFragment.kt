@@ -12,9 +12,8 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.mobile_p2pfl.R
-import com.example.mobile_p2pfl.ai.ml_controller.LearningModel
-import com.example.mobile_p2pfl.ai.ml_controller.LearningModel.Companion.IMG_SIZE
-import com.example.mobile_p2pfl.ai.training.ModelControllerWithSignatures
+import com.example.mobile_p2pfl.ai.controller.LearningModel
+import com.example.mobile_p2pfl.ai.controller.LearningModel.Companion.IMG_SIZE
 import com.example.mobile_p2pfl.common.Values.TRAINER_FRAG_LOG_TAG
 import com.example.mobile_p2pfl.databinding.FragmentTrainingBinding
 import java.io.IOException

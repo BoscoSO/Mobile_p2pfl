@@ -1,4 +1,4 @@
-package com.example.mobile_p2pfl.ai.training;
+package com.example.mobile_p2pfl.ai.testing;
 
 import android.content.Context
 import android.content.res.AssetFileDescriptor

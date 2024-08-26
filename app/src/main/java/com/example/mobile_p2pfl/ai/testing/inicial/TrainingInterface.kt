@@ -1,4 +1,4 @@
-package com.example.mobile_p2pfl.ai
+package com.example.mobile_p2pfl.ai.testing.inicial
 
 import android.graphics.Bitmap
 import android.util.Size
