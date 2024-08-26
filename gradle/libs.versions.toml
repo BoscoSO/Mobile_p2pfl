@@ -38,7 +38,6 @@ tensorflow-lite-gpu = { module = "org.tensorflow:tensorflow-lite-gpu", version =
 tensorflow-lite-support = { module = "org.tensorflow:tensorflow-lite-support", version = "0.4.4" }
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraView" }
 androidx-espresso-remote = { group = "androidx.test.espresso", name = "espresso-remote", version.ref = "espressoRemote" }
-tensorflow-lite-metadata = { group = "org.tensorflow", name = "tensorflow-lite-metadata", version = "0.4.4" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

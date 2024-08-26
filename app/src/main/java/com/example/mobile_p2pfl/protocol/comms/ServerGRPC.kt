@@ -6,7 +6,6 @@ import com.example.mobile_p2pfl.common.Values.GRPC_LOG_TAG
 import com.example.mobile_p2pfl.protocol.IServerConnection
 import com.example.mobile_p2pfl.protocol.proto.Node
 import com.example.mobile_p2pfl.protocol.proto.NodeServicesGrpc
-import com.example.mobile_p2pfl.protocol.proto.NodeServicesGrpc.NodeServicesStub
 import io.grpc.ConnectivityState
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
@@ -14,13 +13,18 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import java.net.URI
+
 
 class ServerGRPC : IServerConnection {
 
     private var channel: ManagedChannel? = null
+    private var stub: NodeServicesGrpc.NodeServicesBlockingStub? = null
 
 
+    init {
+
+
+    }
     override suspend fun connectToServer(uri: Uri): Boolean = withContext(Dispatchers.IO) {
         try {
             if (channel != null && channel!!.getState(true) == ConnectivityState.READY) {
@@ -45,6 +49,9 @@ class ServerGRPC : IServerConnection {
                 delay(100) // Espera 100 ms antes de volver a comprobar
                 if(i++>40) return@withContext false // Si ha pasado más de 4 segundos, devuelve false
             }
+
+
+            stub = NodeServicesGrpc.newBlockingStub(channel)
 
             Log.d(GRPC_LOG_TAG, "Connected")
             return@withContext true
@@ -72,11 +79,14 @@ class ServerGRPC : IServerConnection {
 
     }
 
+
     override fun fetchModel(): Boolean {
 
+        //val response  = stub!!.
         if (channel != null) {
             return channel!!.getState(true) == ConnectivityState.READY
         }
+
         return false
     }
 
