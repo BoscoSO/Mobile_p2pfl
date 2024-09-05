@@ -14,6 +14,7 @@ import com.example.mobile_p2pfl.ai.inference.Classifier
 import com.example.mobile_p2pfl.common.Recognition
 import com.example.mobile_p2pfl.common.Values.INFERENCE_FRAG_LOG_TAG
 import com.example.mobile_p2pfl.databinding.FragmentInferenceBinding
+import com.example.mobile_p2pfl.ui.MasterViewModel
 import java.io.IOException
 
 class InferenceFragment : Fragment() {
@@ -22,8 +23,9 @@ class InferenceFragment : Fragment() {
 
     private val binding get() = _binding!!
 
-    private lateinit var classifier: Classifier
-//    private lateinit var model: TfliteModelController
+
+    private lateinit var masterViewModel: MasterViewModel
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -36,14 +38,8 @@ class InferenceFragment : Fragment() {
         _binding = FragmentInferenceBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
+        masterViewModel = ViewModelProvider(this)[MasterViewModel::class.java]
 
-//        model = TfliteModelController(
-//            TfliteModelLoader(binding.root.context),
-//            mutableListOf(
-//                "0", "1", "2", "3", "4",
-//                "5", "6", "7", "8", "9",
-//            )
-//        )
         init()
 
         return root
@@ -57,7 +53,7 @@ class InferenceFragment : Fragment() {
 
     private fun initClassifier() {
         try {
-            classifier = Classifier(binding.root.context)
+            masterViewModel.classifier = Classifier(binding.root.context)
             Log.v(INFERENCE_FRAG_LOG_TAG, "Classifier initialized")
         } catch (e: IOException) {
             Toast.makeText(
@@ -76,10 +72,6 @@ class InferenceFragment : Fragment() {
 
 
     private fun onDetectClick() {
-        if (!this::classifier.isInitialized) {
-            Log.e(INFERENCE_FRAG_LOG_TAG, "onDetectClick(): Classifier is not initialized")
-            return
-        } else
         if (binding.fpvInferenceDraw.empty) {
             Toast.makeText(binding.root.context, R.string.please_write_a_digit, Toast.LENGTH_SHORT)
                 .show()
@@ -110,10 +102,10 @@ class InferenceFragment : Fragment() {
 
 
         val image: Bitmap = binding.fpvInferenceDraw.exportToBitmap(
-            classifier.getInputShape().width, classifier.getInputShape().height
+            masterViewModel.classifier.getInputShape().width, masterViewModel.classifier.getInputShape().height
         )
 
-        val result = classifier.classify(image)
+        val result = masterViewModel.classifier.classify(image)
         renderResult(result)
     }
 
