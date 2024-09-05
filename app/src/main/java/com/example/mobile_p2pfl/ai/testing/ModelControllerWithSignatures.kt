@@ -8,7 +8,7 @@ import com.example.mobile_p2pfl.ai.testing.inicial.TrainingInterface
 import com.example.mobile_p2pfl.common.Constants.MODEL_FILE_NAME
 import com.example.mobile_p2pfl.common.Device
 import com.example.mobile_p2pfl.common.TrainingSample
-import com.example.mobile_p2pfl.common.Values.TRAINER_LOG_TAG
+import com.example.mobile_p2pfl.common.Values.MODEL_LOG_TAG
 import org.tensorflow.lite.Delegate
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.gpu.GpuDelegate
@@ -56,7 +56,7 @@ class ModelControllerWithSignatures(
             targetWidth = interpreter!!.getInputTensor(0).shape()[2]
             targetHeight = interpreter!!.getInputTensor(0).shape()[1]
         } else {
-            Log.e(TRAINER_LOG_TAG, "TFLite failed to init.")
+            Log.e(MODEL_LOG_TAG, "TFLite failed to init.")
         }
     }
 
@@ -79,7 +79,7 @@ class ModelControllerWithSignatures(
 
             true
         } catch (e: IOException) {
-            Log.e(TRAINER_LOG_TAG, "TFLite failed to load model with error: " + e.message)
+            Log.e(MODEL_LOG_TAG, "TFLite failed to load model with error: " + e.message)
             false
         }
     }
@@ -162,7 +162,7 @@ class ModelControllerWithSignatures(
 
                     // Calculate the average loss after training all batches.
                     avgLoss = totalLoss / numBatchesProcessed
-                    Log.d(TRAINER_LOG_TAG, "Average loss: $avgLoss")
+                    Log.d(MODEL_LOG_TAG, "Average loss: $avgLoss")
 
 
                 }

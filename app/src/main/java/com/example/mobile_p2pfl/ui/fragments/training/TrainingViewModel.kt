@@ -7,10 +7,6 @@ import androidx.lifecycle.ViewModel
 import com.example.mobile_p2pfl.ai.controller.LearningModel
 
 class TrainingViewModel() : ViewModel() {
-    // trainer variable to store the Trainer object
-    val _trainer = MutableLiveData<LearningModel>().apply {
-        value=null
-    }
 
     // number of threads
     val _numThreads = MutableLiveData<Int>().apply {

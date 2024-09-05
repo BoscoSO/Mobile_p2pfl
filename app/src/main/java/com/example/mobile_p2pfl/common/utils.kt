@@ -2,8 +2,9 @@ package com.example.mobile_p2pfl.common
 
 import android.content.Context
 import android.util.Log
-import com.example.mobile_p2pfl.ai.testing.inicial.Classifier
-import com.example.mobile_p2pfl.ai.testing.inicial.Trainer
+import com.example.mobile_p2pfl.ai.controller.LearningModel
+import com.example.mobile_p2pfl.common.Constants.MODEL_FILE_NAME
+import com.example.mobile_p2pfl.protocol.comms.ClientGRPC
 
 import com.example.mobile_p2pfl.ui.fragments.inference.InferenceFragment
 import com.example.mobile_p2pfl.ui.fragments.training.TrainingFragment
@@ -22,9 +23,8 @@ object Constants {
 
 }
 object Values {
-    val TRAINER_LOG_TAG: String = Trainer::class.java.simpleName
+    val MODEL_LOG_TAG: String = LearningModel::class.java.simpleName
     val GRPC_LOG_TAG: String = ClientGRPC::class.java.simpleName
-    val INFERENCE_LOG_TAG: String = Classifier::class.java.simpleName
 
     val INFERENCE_FRAG_LOG_TAG: String = InferenceFragment::class.java.simpleName
     val TRAINER_FRAG_LOG_TAG: String = TrainingFragment::class.java.simpleName

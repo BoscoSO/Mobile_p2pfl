@@ -7,7 +7,7 @@ import com.example.mobile_p2pfl.ai.LearningModelController
 import com.example.mobile_p2pfl.common.Device
 import com.example.mobile_p2pfl.common.Recognition
 import com.example.mobile_p2pfl.common.TrainingSample
-import com.example.mobile_p2pfl.common.Values.TRAINER_LOG_TAG
+import com.example.mobile_p2pfl.common.Values.MODEL_LOG_TAG
 import com.example.mobile_p2pfl.common.getMappedModel
 import org.tensorflow.lite.Delegate
 import org.tensorflow.lite.Interpreter
@@ -60,7 +60,7 @@ class LearningModel(
     // Initialize LearningModel TFLite interpreter.
     init {
         if (!initModelInterpreter()) {
-            Log.e(TRAINER_LOG_TAG, "TFLite failed to init.")
+            Log.e(MODEL_LOG_TAG, "TFLite failed to init.")
         } else
             restoreModel()
     }
@@ -77,7 +77,7 @@ class LearningModel(
             interpreter = Interpreter(modelFile, options)
             true
         } catch (e: IOException) {
-            Log.e(TRAINER_LOG_TAG, "TFLite failed to load model with error: " + e.message)
+            Log.e(MODEL_LOG_TAG, "TFLite failed to load model with error: " + e.message)
             false
         }
     }
@@ -196,7 +196,7 @@ class LearningModel(
                         }
                     }
                     avgLoss = totalLoss / numBatchesProcessed
-                    Log.d(TRAINER_LOG_TAG, "Average loss: $avgLoss")
+                    Log.d(MODEL_LOG_TAG, "Average loss: $avgLoss")
 
                 }
 
@@ -273,7 +273,7 @@ class LearningModel(
                         outputLossBuffer.rewind()
                         val loss = outputLossBuffer.float
                         Log.d(
-                            TRAINER_LOG_TAG,
+                            MODEL_LOG_TAG,
                             "Training Loss for batch: $loss, Time cost: $timeCost"
                         )
 
@@ -283,7 +283,7 @@ class LearningModel(
 
                     // Calculate the average loss after training all batches.
                     avgLoss = totalLoss / numBatchesProcessed
-                    Log.d(TRAINER_LOG_TAG, "Average loss: $avgLoss")
+                    Log.d(MODEL_LOG_TAG, "Average loss: $avgLoss")
 
 
                 }
@@ -304,7 +304,7 @@ class LearningModel(
         inputs["checkpoint_path"] = outputFile.absolutePath
         val outputs: Map<String, Any> = HashMap()
         interpreter!!.runSignature(inputs, outputs, "save")
-        Log.d(TRAINER_LOG_TAG, "Model saved")
+        Log.d(MODEL_LOG_TAG, "Model saved")
 
     }
 
@@ -316,9 +316,9 @@ class LearningModel(
             inputs["checkpoint_path"] = outputFile.absolutePath
             val outputs: Map<String, Any> = HashMap()
             interpreter!!.runSignature(inputs, outputs, "restore")
-            Log.d(TRAINER_LOG_TAG, "Model loaded")
+            Log.d(MODEL_LOG_TAG, "Model loaded")
         } else {
-            Log.e(TRAINER_LOG_TAG, "cant load model")
+            Log.e(MODEL_LOG_TAG, "cant load model")
         }
     }
 

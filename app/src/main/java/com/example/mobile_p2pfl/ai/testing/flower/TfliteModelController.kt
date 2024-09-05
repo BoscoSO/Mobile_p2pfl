@@ -4,7 +4,7 @@ import android.graphics.Bitmap
 import android.util.Log
 import com.example.mobile_p2pfl.ai.temp.TfliteModelLoaderInterface
 import com.example.mobile_p2pfl.common.Recognition
-import com.example.mobile_p2pfl.common.Values.TRAINER_LOG_TAG
+import com.example.mobile_p2pfl.common.Values.MODEL_LOG_TAG
 import java.io.Closeable
 import java.io.IOException
 import java.nio.ByteBuffer
@@ -261,7 +261,7 @@ class TfliteModelController(modelLoader: TfliteModelLoaderInterface, classes: Co
                     }
                     val avgLoss = totalLoss / numBatchesProcessed
 
-                    Log.d(TRAINER_LOG_TAG, "Average loss: $avgLoss")
+                    Log.d(MODEL_LOG_TAG, "Average loss: $avgLoss")
 
                     //lossConsumer?.onLoss(epoch, avgLoss)
                 }

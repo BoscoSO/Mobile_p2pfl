@@ -9,6 +9,7 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.example.mobile_p2pfl.R
+import com.example.mobile_p2pfl.common.Device
 import com.example.mobile_p2pfl.common.saveModelToInternalStorage
 import com.example.mobile_p2pfl.databinding.ActivityMainBinding
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -48,6 +49,8 @@ class MainActivity : AppCompatActivity() {
 
         masterViewModel = ViewModelProvider(this)[MasterViewModel::class.java]
         masterViewModel.initializeConnection()
+
+        masterViewModel.initializeModelController(binding.root.context,2, Device.CPU)
 
     }
 }

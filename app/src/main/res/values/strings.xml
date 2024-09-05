@@ -33,7 +33,7 @@
     <string name="please_write_a_digit">Please write a digit in the box above.</string>
     <string name="exception_failed_to_create_classifier">Failed to start the Classifier.</string>
     <string name="exception_failed_to_create_trainer">Failed to start the Trainer.</string>
-    <string name="exception_training_in_progress">Training is already in progress.</string>
+    <string name="exception_training_in_progress">Training is in progress.</string>
     <string name="exception_too_few_samples">Make sure you have at least a few samples.</string>
     <string name="tv_status_text">Status</string>
     <string name="sync_button_description">tries to reconnect to server</string>

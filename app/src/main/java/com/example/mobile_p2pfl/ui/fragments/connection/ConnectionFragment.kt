@@ -37,7 +37,7 @@ class ConnectionFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         //= ViewModelProvider(this)[ConnectionViewModel::class.java]
-        masterViewModel = ViewModelProvider(this)[MasterViewModel::class.java]
+        masterViewModel = ViewModelProvider(requireActivity())[MasterViewModel::class.java]
 
         _binding = FragmentConnectionBinding.inflate(inflater, container, false)
         val root: View = binding.root
@@ -80,7 +80,7 @@ class ConnectionFragment : Fragment() {
         binding.btnSendModel.setOnClickListener {
 
             masterViewModel.grpcClient.sendModel(
-                this.requireContext(),
+                binding.root.context,
                 object : StreamObserver<ResponseMessage> {
 
                     override fun onNext(value: ResponseMessage) {
@@ -108,16 +108,16 @@ class ConnectionFragment : Fragment() {
 
     private fun startPulse() {
         binding.ivAnimationPulseOff.startAnimation(
-            AnimationUtils.loadAnimation(context, pulse_button)
+            AnimationUtils.loadAnimation(binding.root.context, pulse_button)
         )
         binding.ivAnimationPulse2Off.startAnimation(
-            AnimationUtils.loadAnimation(context, pulse2_button)
+            AnimationUtils.loadAnimation(binding.root.context, pulse2_button)
         )
         binding.ivAnimationPulse.startAnimation(
-            AnimationUtils.loadAnimation(context, pulse_button)
+            AnimationUtils.loadAnimation(binding.root.context, pulse_button)
         )
         binding.ivAnimationPulse2.startAnimation(
-            AnimationUtils.loadAnimation(context, pulse2_button)
+            AnimationUtils.loadAnimation(binding.root.context, pulse2_button)
         )
     }
 

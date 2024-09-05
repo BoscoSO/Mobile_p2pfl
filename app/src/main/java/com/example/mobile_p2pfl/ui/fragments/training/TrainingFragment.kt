@@ -38,7 +38,7 @@ class TrainingFragment : Fragment() {
         val root: View = binding.root
 
         _trainingViewModel = ViewModelProvider(this)[TrainingViewModel::class.java]
-        masterViewModel = ViewModelProvider(this)[MasterViewModel::class.java]
+        masterViewModel = ViewModelProvider(requireActivity())[MasterViewModel::class.java]
 
         init()
 
@@ -47,43 +47,28 @@ class TrainingFragment : Fragment() {
 
     private fun init() {
         initView()
-        if (masterViewModel._trainer.value == null)
-            initTrainer(trainingViewModel._numThreads.value!!)
+        setupTrainer()
     }
 
 
-    private fun initTrainer(numThreads: Int) {
+    private fun setupTrainer() {
         if (masterViewModel._isTraining.value == true) {
             Toast.makeText(
-                context,
+                binding.root.context,
                 R.string.exception_training_in_progress,
                 Toast.LENGTH_LONG
             ).show()
-        } else
-            try {
-                trainingViewModel._trainer.value =
-                    LearningModel(binding.root.context, numThreads) //, Device.CPU
-                    //Trainer(binding.root.context, numThreads) //, Device.CPU
-
-                if (trainingViewModel._oldTrainningSamples.value!!.isNotEmpty()) {
-                    trainingViewModel._trainningSamples.value =
-                        trainingViewModel._trainningSamples.value?.plus(
-                            trainingViewModel._oldTrainningSamples.value!!
-                        )
-                    trainingViewModel._oldTrainningSamples.value = emptyList()
-                    loadNewSamples()
-                    Log.v(TRAINER_FRAG_LOG_TAG, "load new samples")
-                }
-
-                Log.v(TRAINER_FRAG_LOG_TAG, "Trainer initialized")
-            } catch (e: IOException) {
-                Toast.makeText(
-                    context,
-                    R.string.exception_failed_to_create_trainer,
-                    Toast.LENGTH_LONG
-                ).show()
-                Log.e(TRAINER_FRAG_LOG_TAG, "init(): Failed to create Trainer", e)
+        } else {
+            if (trainingViewModel._oldTrainningSamples.value!!.isNotEmpty()) {
+                trainingViewModel._trainningSamples.value =
+                    trainingViewModel._trainningSamples.value?.plus(
+                        trainingViewModel._oldTrainningSamples.value!!
+                    )
+                trainingViewModel._oldTrainningSamples.value = emptyList()
+                loadNewSamples()
+                Log.v(TRAINER_FRAG_LOG_TAG, "loading old samples..." + trainingViewModel._trainningSamples.value!!.size)
             }
+        }
     }
 
     private fun initView() {
@@ -101,8 +86,10 @@ class TrainingFragment : Fragment() {
             binding.sbThreadsSelector.isEnabled = !isTraining
         }
         trainingViewModel.numThreads.observe(viewLifecycleOwner) { numThreads ->
-            if (masterViewModel._isTraining.value == false)
-                 initTrainer(numThreads)
+            if (masterViewModel._isTraining.value == false){
+                masterViewModel.initializeModelController(binding.root.context, numThreads)
+                setupTrainer()
+            }
         }
         trainingViewModel.trainningSamples.observe(viewLifecycleOwner) { samples ->
             binding.tvSamplesNumbLbl.text = samples.size.toString()
@@ -123,14 +110,14 @@ class TrainingFragment : Fragment() {
             }
         })
         binding.btnAddSample.setOnClickListener { addSampleClickListener() }
-        binding.btnClearSample.setOnClickListener { clearSampleClickListener() }
+        binding.btnClearSample.setOnClickListener { binding.fpvInferenceDraw.clear() }
         binding.btnTraining.setOnClickListener { onTrainingClick() }
     }
 
     private fun onTrainingClick() {
         if (binding.btnTraining.isChecked) {
             if (loadNewSamples()) {
-                masterViewModel._trainer.value?.startTraining()
+                masterViewModel.modelController.startTraining()
                 masterViewModel._isTraining.value = true
                 Log.v(TRAINER_FRAG_LOG_TAG, "Training started")
             } else {
@@ -139,9 +126,9 @@ class TrainingFragment : Fragment() {
             }
 
         } else {
-            masterViewModel._trainer.value?.pauseTraining()
+            masterViewModel.modelController.pauseTraining()
             masterViewModel._isTraining.value = false
-            masterViewModel._trainer.value?.saveModelWeights()
+            masterViewModel.modelController.saveModel()
 
             Log.v(TRAINER_FRAG_LOG_TAG, "Training paused")
         }
@@ -149,7 +136,7 @@ class TrainingFragment : Fragment() {
     }
 
     private fun loadNewSamples(): Boolean {
-        val trainer = masterViewModel._trainer.value!!
+        val trainer = masterViewModel.modelController
         val samples: List<TrainingViewModel.TrainingSample> =
             trainingViewModel._trainningSamples.value ?: emptyList()
         val oldSamples: List<TrainingViewModel.TrainingSample> =
@@ -164,7 +151,7 @@ class TrainingFragment : Fragment() {
             return true
         } else {
             Toast.makeText(
-                context,
+                binding.root.context,
                 R.string.exception_too_few_samples,
                 Toast.LENGTH_LONG
             ).show()
@@ -174,31 +161,19 @@ class TrainingFragment : Fragment() {
 
 
     private fun addSampleClickListener() {
-        //val trainer = trainingViewModel._trainer.value!!
         val image: Bitmap = binding.fpvInferenceDraw.exportToBitmap(
-            IMG_SIZE,IMG_SIZE
+            IMG_SIZE, IMG_SIZE
         )
         val number = binding.npNumber.value
-
-
-        //trainer.addTrainingSample(image, number)
-
 
         val samples: List<TrainingViewModel.TrainingSample> =
             trainingViewModel._trainningSamples.value ?: emptyList()
         val newSample = TrainingViewModel.TrainingSample(image, number)
 
         trainingViewModel._trainningSamples.value = samples + newSample
-
-
-
         binding.fpvInferenceDraw.clear()
     }
 
-    private fun clearSampleClickListener() {
-        binding.fpvInferenceDraw.clear()
-
-    }
 
 
     override fun onDestroyView() {

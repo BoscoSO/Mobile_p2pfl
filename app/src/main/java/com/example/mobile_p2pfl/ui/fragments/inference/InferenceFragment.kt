@@ -10,19 +10,18 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.mobile_p2pfl.R
-import com.example.mobile_p2pfl.ai.inference.Classifier
+import com.example.mobile_p2pfl.ai.controller.LearningModel
 import com.example.mobile_p2pfl.common.Recognition
 import com.example.mobile_p2pfl.common.Values.INFERENCE_FRAG_LOG_TAG
 import com.example.mobile_p2pfl.databinding.FragmentInferenceBinding
+import com.example.mobile_p2pfl.ui.MasterViewModel
 import java.io.IOException
 
 class InferenceFragment : Fragment() {
 
     private var _binding: FragmentInferenceBinding? = null
-
     private val binding get() = _binding!!
 
-    private lateinit var classifier: LearningModel
 
     private lateinit var masterViewModel: MasterViewModel
 
@@ -38,7 +37,8 @@ class InferenceFragment : Fragment() {
         _binding = FragmentInferenceBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-        masterViewModel = ViewModelProvider(this)[MasterViewModel::class.java]
+        masterViewModel = ViewModelProvider(requireActivity())[MasterViewModel::class.java]
+
 
         init()
 
@@ -46,22 +46,10 @@ class InferenceFragment : Fragment() {
     }
 
     private fun init() {
-        initClassifier()
         initView()
     }
 
 
-    private fun initClassifier() {
-        try {
-            //
-            // classifier = Classifier(binding.root.context)
-            classifier = LearningModel(binding.root.context)
-            Log.v(INFERENCE_FRAG_LOG_TAG, "Classifier initialized")
-        } catch (e: IOException) {
-            Toast.makeText(binding.root.context, R.string.exception_failed_to_create_classifier, Toast.LENGTH_LONG).show()
-            Log.e(INFERENCE_FRAG_LOG_TAG, "init(): Failed to create Classifier", e)
-        }
-    }
 
     private fun initView() {
         binding.btnDetect.setOnClickListener { onDetectClick() }
@@ -70,6 +58,14 @@ class InferenceFragment : Fragment() {
 
 
     private fun onDetectClick() {
+        if(masterViewModel._isTraining.value == true){
+            Toast.makeText(
+                binding.root.context,
+                R.string.exception_training_in_progress,
+                Toast.LENGTH_LONG
+            ).show()
+            return
+        }
         if (binding.fpvInferenceDraw.empty) {
             Toast.makeText(binding.root.context, R.string.please_write_a_digit, Toast.LENGTH_SHORT)
                 .show()
@@ -79,7 +75,7 @@ class InferenceFragment : Fragment() {
         val image: Bitmap = binding.fpvInferenceDraw.exportToBitmap(
             28,28
         )
-        val result = classifier.classify(image)
+        val result = masterViewModel.modelController.classify(image)
         renderResult(result)
     }
 

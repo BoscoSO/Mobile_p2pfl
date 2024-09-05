@@ -7,8 +7,7 @@ import android.util.Log
 import android.util.Size
 import com.example.mobile_p2pfl.common.Device
 import com.example.mobile_p2pfl.common.Recognition
-import com.example.mobile_p2pfl.common.Values.INFERENCE_LOG_TAG
-import com.example.mobile_p2pfl.common.Values.TRAINER_LOG_TAG
+import com.example.mobile_p2pfl.common.Values
 import com.example.mobile_p2pfl.common.getMappedModel
 import org.tensorflow.lite.Delegate
 import org.tensorflow.lite.Interpreter
@@ -17,13 +16,9 @@ import org.tensorflow.lite.gpu.GpuDelegate
 import org.tensorflow.lite.nnapi.NnApiDelegate
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.io.Closeable
-import java.io.File
-import java.io.FileInputStream
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.nio.MappedByteBuffer
-import java.nio.channels.FileChannel
 
 
 class Classifier(
@@ -70,7 +65,7 @@ class Classifier(
                 TensorBuffer.createFixedSize(outputTensor.shape(), outputTensor.dataType())
 
         } else {
-            Log.e(TRAINER_LOG_TAG, "TFLite failed to init.")
+            Log.e(Values.MODEL_LOG_TAG, "TFLite failed to init.")
         }
     }
 
@@ -88,7 +83,7 @@ class Classifier(
             interpreter = Interpreter(modelFile, options)
             true
         } catch (e: IOException) {
-            Log.e(TRAINER_LOG_TAG, "TFLite failed to load model with error: " + e.message)
+            Log.e(Values.MODEL_LOG_TAG, "TFLite failed to load model with error: " + e.message)
             false
         }
     }
@@ -110,7 +105,7 @@ class Classifier(
         val probs = outputBuffer.floatArray
         val top = probs.argMax()
         Log.v(
-            INFERENCE_LOG_TAG,
+            Values.MODEL_LOG_TAG,
             "classify(): timeCost = $timeCost, top = $top, probs = ${probs.contentToString()}"
         )
 

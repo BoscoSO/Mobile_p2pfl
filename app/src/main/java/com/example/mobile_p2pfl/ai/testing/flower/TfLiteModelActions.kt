@@ -5,7 +5,7 @@ import android.os.SystemClock
 import android.util.Log
 import com.example.mobile_p2pfl.ai.testing.inicial.argMax
 import com.example.mobile_p2pfl.common.Recognition
-import com.example.mobile_p2pfl.common.Values.INFERENCE_LOG_TAG
+import com.example.mobile_p2pfl.common.Values.MODEL_LOG_TAG
 import org.tensorflow.lite.Tensor
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.io.Closeable
@@ -213,7 +213,7 @@ class TfLiteModelActions(private val tfModel: TfLiteModel) : Closeable {
         val probs = outputBuffer.floatArray
         val top = probs.argMax()
         Log.v(
-            INFERENCE_LOG_TAG,
+            MODEL_LOG_TAG,
             "classify(): timeCost = $timeCost, top = $top, probs = ${probs.contentToString()}"
         )
 
