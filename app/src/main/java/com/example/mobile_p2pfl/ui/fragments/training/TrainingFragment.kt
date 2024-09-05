@@ -94,6 +94,10 @@ class TrainingFragment : Fragment() {
         trainingViewModel.trainningSamples.observe(viewLifecycleOwner) { samples ->
             binding.tvSamplesNumbLbl.text = samples.size.toString()
         }
+        trainingViewModel.loadedSamples.observe(viewLifecycleOwner) { samples ->
+            Log.v(TRAINER_FRAG_LOG_TAG, "loaded samples: $samples")
+            binding.tvLoadedSamplesNumbLbl.text = samples.toString()
+        }
 
         binding.sbThreadsSelector.setOnSeekBarChangeListener(object :
             SeekBar.OnSeekBarChangeListener {
@@ -148,6 +152,7 @@ class TrainingFragment : Fragment() {
             }
             trainingViewModel._oldTrainningSamples.value = oldSamples + samples
             trainingViewModel._trainningSamples.value = emptyList()
+            trainingViewModel._loadedSamples.value = trainer.getSamplesSize()
             return true
         } else {
             Toast.makeText(

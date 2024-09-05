@@ -21,6 +21,11 @@ class TrainingViewModel() : ViewModel() {
     }
     val trainningSamples: LiveData<List<TrainingSample>> = _trainningSamples
 
+    val _loadedSamples = MutableLiveData<Int>().apply {
+        value=0
+    }
+    val loadedSamples: LiveData<Int> = _loadedSamples
+
 
     // list of old training samples for new interpreters build
     val _oldTrainningSamples = MutableLiveData<List<TrainingSample>>().apply {

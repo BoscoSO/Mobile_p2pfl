@@ -76,6 +76,24 @@
 
 
     <TextView
+        android:id="@+id/tv_loaded_samples_lbl"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:text="@string/loaded_samples_lbl"
+        android:textSize="16sp"
+        app:layout_constraintStart_toEndOf="@id/tv_samples_numb_lbl"
+        app:layout_constraintTop_toBottomOf="@id/top_layout" />
+
+    <TextView
+        android:id="@+id/tv_loaded_samples_numb_lbl"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:textSize="16sp"
+        app:layout_constraintStart_toEndOf="@id/tv_loaded_samples_lbl"
+        app:layout_constraintTop_toBottomOf="@id/top_layout" />
+    <TextView
         android:id="@+id/tv_training_btn_lbl"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

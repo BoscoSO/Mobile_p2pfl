@@ -43,6 +43,7 @@
     <string name="threads_min_value">1</string>
     <string name="add_sample_description">Add new sample to the training</string>
     <string name="clear_sample_description">Clears the sample`s board</string>
-    <string name="samples_lbl">"Collected Samples: "</string>
+    <string name="samples_lbl">"Collected Samples:"</string>
+    <string name="loaded_samples_lbl">"Loaded Samples:"</string>
 
 </resources>
