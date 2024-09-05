@@ -5,7 +5,7 @@ import android.util.Log
 import com.example.mobile_p2pfl.ai.inference.Classifier
 import com.example.mobile_p2pfl.ai.training.Trainer
 import com.example.mobile_p2pfl.common.Constants.MODEL_FILE_NAME
-import com.example.mobile_p2pfl.protocol.comms.ServerGRPC
+import com.example.mobile_p2pfl.protocol.comms.ClientGRPC
 import com.example.mobile_p2pfl.ui.fragments.inference.InferenceFragment
 import com.example.mobile_p2pfl.ui.fragments.training.TrainingFragment
 import java.io.File
@@ -23,7 +23,7 @@ object Constants {
 }
 object Values {
     val TRAINER_LOG_TAG: String = Trainer::class.java.simpleName
-    val GRPC_LOG_TAG: String = ServerGRPC::class.java.simpleName
+    val GRPC_LOG_TAG: String = ClientGRPC::class.java.simpleName
     val INFERENCE_LOG_TAG: String = Classifier::class.java.simpleName
 
     val INFERENCE_FRAG_LOG_TAG: String = InferenceFragment::class.java.simpleName
