@@ -10,7 +10,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.mobile_p2pfl.R
-import com.example.mobile_p2pfl.ai.controller.LearningModel
+import com.example.mobile_p2pfl.ai.inference.Classifier
 import com.example.mobile_p2pfl.common.Recognition
 import com.example.mobile_p2pfl.common.Values.INFERENCE_FRAG_LOG_TAG
 import com.example.mobile_p2pfl.databinding.FragmentInferenceBinding
@@ -24,6 +24,8 @@ class InferenceFragment : Fragment() {
 
     private lateinit var classifier: LearningModel
 
+    private lateinit var masterViewModel: MasterViewModel
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -36,6 +38,7 @@ class InferenceFragment : Fragment() {
         _binding = FragmentInferenceBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
+        masterViewModel = ViewModelProvider(this)[MasterViewModel::class.java]
 
         init()
 
@@ -59,19 +62,17 @@ class InferenceFragment : Fragment() {
             Log.e(INFERENCE_FRAG_LOG_TAG, "init(): Failed to create Classifier", e)
         }
     }
+
     private fun initView() {
         binding.btnDetect.setOnClickListener { onDetectClick() }
         binding.btnClear.setOnClickListener { clearResult() }
     }
 
 
-
     private fun onDetectClick() {
-        if (!this::classifier.isInitialized) {
-            Log.e(INFERENCE_FRAG_LOG_TAG, "onDetectClick(): Classifier is not initialized")
-            return
-        } else if (binding.fpvInferenceDraw.empty) {
-            Toast.makeText(binding.root.context, R.string.please_write_a_digit, Toast.LENGTH_SHORT).show()
+        if (binding.fpvInferenceDraw.empty) {
+            Toast.makeText(binding.root.context, R.string.please_write_a_digit, Toast.LENGTH_SHORT)
+                .show()
             return
         }
 
@@ -90,6 +91,7 @@ class InferenceFragment : Fragment() {
             result.timeCost
         )
     }
+
     private fun clearResult() {
         binding.fpvInferenceDraw.clear()
         binding.tvPrediction.setText(R.string.empty)

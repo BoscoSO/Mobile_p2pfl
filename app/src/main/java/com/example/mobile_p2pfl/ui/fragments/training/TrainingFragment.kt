@@ -16,6 +16,7 @@ import com.example.mobile_p2pfl.ai.controller.LearningModel
 import com.example.mobile_p2pfl.ai.controller.LearningModel.Companion.IMG_SIZE
 import com.example.mobile_p2pfl.common.Values.TRAINER_FRAG_LOG_TAG
 import com.example.mobile_p2pfl.databinding.FragmentTrainingBinding
+import com.example.mobile_p2pfl.ui.MasterViewModel
 import java.io.IOException
 
 class TrainingFragment : Fragment() {
@@ -26,6 +27,7 @@ class TrainingFragment : Fragment() {
     private var _trainingViewModel: TrainingViewModel? = null
     private val trainingViewModel get() = _trainingViewModel!!
 
+    private lateinit var masterViewModel: MasterViewModel
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -36,6 +38,7 @@ class TrainingFragment : Fragment() {
         val root: View = binding.root
 
         _trainingViewModel = ViewModelProvider(this)[TrainingViewModel::class.java]
+        masterViewModel = ViewModelProvider(this)[MasterViewModel::class.java]
 
         init()
 
@@ -44,13 +47,13 @@ class TrainingFragment : Fragment() {
 
     private fun init() {
         initView()
-        if (trainingViewModel._trainer.value == null)
+        if (masterViewModel._trainer.value == null)
             initTrainer(trainingViewModel._numThreads.value!!)
     }
 
 
     private fun initTrainer(numThreads: Int) {
-        if (trainingViewModel._isTraining.value == true) {
+        if (masterViewModel._isTraining.value == true) {
             Toast.makeText(
                 context,
                 R.string.exception_training_in_progress,
@@ -90,15 +93,15 @@ class TrainingFragment : Fragment() {
 
         binding.sbThreadsSelector.progress = trainingViewModel._numThreads.value!! - 1
         binding.tvThreadsNumbLbl.text = trainingViewModel._numThreads.value.toString()
-        binding.btnTraining.isChecked = trainingViewModel._isTraining.value!!
+        binding.btnTraining.isChecked = masterViewModel._isTraining.value!!
 
 
-        trainingViewModel.isTraining.observe(viewLifecycleOwner) { isTraining ->
+        masterViewModel.isTraining.observe(viewLifecycleOwner) { isTraining ->
             binding.btnAddSample.isEnabled = !isTraining
             binding.sbThreadsSelector.isEnabled = !isTraining
         }
         trainingViewModel.numThreads.observe(viewLifecycleOwner) { numThreads ->
-            if (trainingViewModel._isTraining.value == false)
+            if (masterViewModel._isTraining.value == false)
                  initTrainer(numThreads)
         }
         trainingViewModel.trainningSamples.observe(viewLifecycleOwner) { samples ->
@@ -127,8 +130,8 @@ class TrainingFragment : Fragment() {
     private fun onTrainingClick() {
         if (binding.btnTraining.isChecked) {
             if (loadNewSamples()) {
-                trainingViewModel._trainer.value?.startTraining()
-                trainingViewModel._isTraining.value = true
+                masterViewModel._trainer.value?.startTraining()
+                masterViewModel._isTraining.value = true
                 Log.v(TRAINER_FRAG_LOG_TAG, "Training started")
             } else {
                 Log.v(TRAINER_FRAG_LOG_TAG, "Training couldn't start")
@@ -136,15 +139,17 @@ class TrainingFragment : Fragment() {
             }
 
         } else {
-            trainingViewModel._trainer.value?.pauseTraining()
-            trainingViewModel._isTraining.value = false
+            masterViewModel._trainer.value?.pauseTraining()
+            masterViewModel._isTraining.value = false
+            masterViewModel._trainer.value?.saveModelWeights()
+
             Log.v(TRAINER_FRAG_LOG_TAG, "Training paused")
         }
 
     }
 
     private fun loadNewSamples(): Boolean {
-        val trainer = trainingViewModel._trainer.value!!
+        val trainer = masterViewModel._trainer.value!!
         val samples: List<TrainingViewModel.TrainingSample> =
             trainingViewModel._trainningSamples.value ?: emptyList()
         val oldSamples: List<TrainingViewModel.TrainingSample> =

@@ -40,57 +40,111 @@
         app:layout_constraintTop_toTopOf="parent" />
 
 
-    <ImageView
-        android:id="@+id/icn_status_loading"
+    <Button
+        android:id="@+id/btn_fetch_model"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="20dp"
-        android:backgroundTint="@color/inv"
-        android:src="@drawable/ic_loading_circle_24"
-        app:layout_constraintStart_toEndOf="@id/tv_status"
-        app:layout_constraintTop_toTopOf="parent" />
-
-
-    <ImageButton
-        android:id="@+id/btn_connect"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:backgroundTint="@color/inv"
-        android:contentDescription="@string/sync_button_description"
-        android:src="@drawable/baseline_sync_24"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-
-    <Spinner
-        android:id="@+id/sp_server_list"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:entries="@array/servers_array"
+        android:layout_margin="16dp"
+        android:text="FetchModel"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_status" />
 
-    <TextView
-        android:id="@+id/tv_connection_info"
-        android:layout_width="match_parent"
+    <Button
+        android:id="@+id/btn_send_model"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:text="@string/lorem_ipsum"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="16dp"
+        android:text="Send"
+        app:layout_constraintEnd_toStartOf="@id/btn_fetch_model"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/sp_server_list" />
+        app:layout_constraintTop_toBottomOf="@id/tv_status" />
 
-    <TextView
-        android:id="@+id/tv_connection_status"
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/ly_animation_on"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:text="status: "
+        android:layout_height="match_parent"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_connection_info" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/iv_animation_pulse"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:background="@drawable/baseline_circle_on_24"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/iv_animation_pulse2"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:background="@drawable/baseline_circle_on_24"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/btn_disconnect"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:background="@color/inv"
+            android:foreground="@drawable/btn_connect"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/ly_animation_off"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+
+        <ImageView
+            android:id="@+id/iv_animation_pulse_off"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:background="@drawable/baseline_circle_off_24"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/iv_animation_pulse2_off"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:background="@drawable/baseline_circle_off_24"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Button
+            android:id="@+id/btn_connect"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:background="@color/inv"
+            android:foreground="@drawable/btn_disconnect"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

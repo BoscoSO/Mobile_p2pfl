@@ -8,17 +8,33 @@ import com.example.mobile_p2pfl.common.Constants.MODEL_FILE_NAME
 import com.example.mobile_p2pfl.common.Device
 import com.example.mobile_p2pfl.common.TrainingSample
 import com.example.mobile_p2pfl.common.Values.TRAINER_LOG_TAG
+import com.example.mobile_p2pfl.common.getMappedModel
+import org.json.JSONArray
+import org.json.JSONObject
 import org.tensorflow.lite.Delegate
 import org.tensorflow.lite.Interpreter
+import org.tensorflow.lite.Tensor
 import org.tensorflow.lite.gpu.GpuDelegate
 import org.tensorflow.lite.nnapi.NnApiDelegate
 import org.tensorflow.lite.support.common.FileUtil
 import java.io.Closeable
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.FileReader
+import java.io.FileWriter
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.channels.FileChannel
+import java.nio.channels.GatheringByteChannel
+import java.nio.channels.ScatteringByteChannel
+import java.nio.file.StandardOpenOption
+import java.util.TreeMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.locks.ReadWriteLock
+import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.math.max
 import kotlin.math.min
 
@@ -72,15 +88,21 @@ class Trainer(
         //delegate?.let { options.delegates.add(it) }
 
         return try {
-            val modelFile = FileUtil.loadMappedFile(context, MODEL_FILE_NAME)
+            //val modelFile = FileUtil.loadMappedFile(context, MODEL_FILE_NAME)
 
+
+            val modelFile = getMappedModel(context)
             interpreter = Interpreter(modelFile, options)
+
+
 
             true
         } catch (e: IOException) {
             Log.e(TRAINER_LOG_TAG, "TFLite failed to load model with error: " + e.message)
             false
         }
+
+
     }
 
 
@@ -142,11 +164,12 @@ class Trainer(
                             MutableList(trainBatchSize) { FloatArray(VALUES_OUTPUTS_SIZE) }
 
                         // Copy a training sample list into two different input training lists.
-//                        trainingSamples.forEachIndexed { i, sample ->
-//                            trainingBatchBottlenecks[i] = sample.bottleneck
-//                            trainingBatchLabels[i] = sample.bottleneck // TODO es label, pero label tiene que ser el floatarray
-//                        }
-                        val loss: FloatArray = training(trainingBatchBottlenecks, trainingBatchLabels)
+                        trainingSamples.forEachIndexed { i, sample ->
+                            trainingBatchBottlenecks[i] = sample.bottleneck
+                            trainingBatchLabels[i] = sample.label
+                        }
+                        val loss: FloatArray =
+                            training(trainingBatchBottlenecks, trainingBatchLabels)
 
 
                         for (i in loss.indices) {
@@ -181,17 +204,8 @@ class Trainer(
         }
     }
 
+
     //*****************UTILS*******************//
-    override fun getSamplesSize(): Int {
-        return samples.size
-    }
-    // Returns the input shape of the model.
-    override fun getInputShape(): Size {
-        return Size(targetWidth, targetHeight)
-    }
-
-
-
     // Train the model.
     private fun training(
         bottlenecks: MutableList<FloatArray>,
@@ -199,11 +213,11 @@ class Trainer(
     ): FloatArray {
         val inputShape = interpreter?.getInputTensor(0)?.shape()
         val expectedInputSize = inputShape?.fold(1, Int::times)?.times(4) // 4 bytes por float
-
         val inputBuffer = ByteBuffer.allocateDirect(expectedInputSize!!).apply {
             order(ByteOrder.nativeOrder())
         }
 
+        // Copiar los bottlenecks y labels a los buffers
         for (i in bottlenecks.indices) {
             for (value in bottlenecks[i]) {
                 inputBuffer.putFloat(value)
@@ -213,11 +227,10 @@ class Trainer(
             }
         }
 
+        // Rellenar el resto del buffer con ceros
         while (inputBuffer.position() < expectedInputSize) {
             inputBuffer.putFloat(0f)
         }
-
-
         inputBuffer.rewind()
 
         // Obtener las dimensiones de salida del modelo
@@ -241,6 +254,50 @@ class Trainer(
         return outputArray
     }
 
+    fun getSamplesSize(): Int {
+        return samples.size
+    }
+
+    fun saveModelWeights() {
+        val tensorsSize = interpreter!!.outputTensorCount
+
+        val outputFile = File(context.filesDir, "checkpoint.bin")
+        val fos = FileOutputStream(outputFile)
+
+        for (i in 0 until tensorsSize) {
+            val tensor = interpreter!!.getOutputTensor(i)
+            val buffer = tensor.asReadOnlyBuffer()
+            val bytes = ByteArray(buffer.remaining())
+            buffer.get(bytes)
+            fos.write(bytes)
+        }
+
+        // Cerramos el archivo
+        fos.close()
+    }
+
+    private fun loadModelWeights() {
+        val inputFil = File(context.filesDir, "checkpoint.bin")
+        if (!inputFil.exists()) return
+
+        val fileInputStream = FileInputStream(inputFil)
+        val fileChannel = fileInputStream.channel
+        val mappedByteBuffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileChannel.size())
+
+        val weights = ByteArray(mappedByteBuffer.limit())
+        mappedByteBuffer.get(weights)
+
+
+        // Cargar los pesos en el interpreter
+        interpreter!!.run {
+            allocateTensors()
+
+            var offset = 0
+            for (i in 0 until outputTensorCount) {
+                val tensor = getOutputTensor(i)
+                val tensorBuffer = tensor.asReadOnlyBuffer()
+                val bytes = ByteArray(tensorBuffer.remaining())
+                tensorBuffer.get(bytes)
 
 
     // Extract the bottleneck features from the given image.
@@ -313,8 +370,10 @@ class Trainer(
 
 
 
+
     //*****************CONSTANTS*******************//
     companion object {
+        private const val FLOAT_BYTES = 4
         private const val VALUES_OUTPUTS_SIZE = 10
         private const val EXPECTED_BATCH_SIZE = 20
     }

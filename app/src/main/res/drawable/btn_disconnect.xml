@@ -2,12 +2,13 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item android:gravity="fill"
-        android:drawable="@drawable/switch_background"/>
+        android:drawable="@drawable/baseline_circle_off_24"/>
 
     <item android:gravity="center"
-        android:drawable="@drawable/switch_icons_samples"
+        android:drawable="@drawable/ic_conected_24"
         android:top="5dp"
         android:bottom="5dp"
         android:left="5dp"
         android:right="5dp"/>
+
 </layer-list>

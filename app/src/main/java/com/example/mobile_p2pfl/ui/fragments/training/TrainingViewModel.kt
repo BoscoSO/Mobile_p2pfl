@@ -19,13 +19,6 @@ class TrainingViewModel() : ViewModel() {
     val numThreads: LiveData<Int> = _numThreads
 
 
-    // whether is training or not
-    val _isTraining = MutableLiveData<Boolean>().apply {
-        value=false
-    }
-    val isTraining: LiveData<Boolean> = _isTraining
-
-
     // list of training samples
     val _trainningSamples = MutableLiveData<List<TrainingSample>>().apply {
         value= emptyList<TrainingSample>()
