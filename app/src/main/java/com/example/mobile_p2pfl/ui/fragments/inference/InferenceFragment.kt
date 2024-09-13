@@ -46,19 +46,21 @@ class InferenceFragment : Fragment() {
     }
 
     private fun init() {
-        initView()
-    }
-
-
-
-    private fun initView() {
         binding.btnDetect.setOnClickListener { onDetectClick() }
         binding.btnClear.setOnClickListener { clearResult() }
     }
 
 
     private fun onDetectClick() {
-        if(masterViewModel._isTraining.value == true){
+        if (!masterViewModel.modelController.isModelInitialized()) {
+            Toast.makeText(
+                binding.root.context,
+                R.string.exception_no_model,
+                Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+        if (masterViewModel._isTraining.value == true) {
             Toast.makeText(
                 binding.root.context,
                 R.string.exception_training_in_progress,
@@ -73,7 +75,7 @@ class InferenceFragment : Fragment() {
         }
 
         val image: Bitmap = binding.fpvInferenceDraw.exportToBitmap(
-            28,28
+            28, 28
         )
         val result = masterViewModel.modelController.classify(image)
         renderResult(result)

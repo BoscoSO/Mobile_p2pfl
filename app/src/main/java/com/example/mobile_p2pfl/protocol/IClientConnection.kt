@@ -10,7 +10,10 @@ interface IClientConnection {
 
     fun disconnect() : Boolean
 
-    fun fetchModel() : Boolean
+    suspend fun sendWeights(context: Context): Node.ResponseMessage
 
-    fun sendModel(context : Context, responseObserver: StreamObserver<Node.ResponseMessage>)
+    suspend fun getModel(context: Context): ByteArray
+
+
+
 }

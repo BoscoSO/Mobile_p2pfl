@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.mobile_p2pfl.ai.controller.LearningModel
 import com.example.mobile_p2pfl.common.Device
 import com.example.mobile_p2pfl.protocol.comms.ClientGRPC
+import com.example.mobile_p2pfl.protocol.comms.StreamingClientGRPC
 import kotlinx.coroutines.launch
 
 class MasterViewModel : ViewModel() {
@@ -18,10 +19,10 @@ class MasterViewModel : ViewModel() {
     val _connectionState = MutableLiveData<ConnectionState>()
     val connectionState: LiveData<ConnectionState> = _connectionState
 
-    lateinit var grpcClient: ClientGRPC
+    lateinit var grpcClient: StreamingClientGRPC //ClientGRPC
 
     fun initializeConnection() {
-        grpcClient = ClientGRPC()
+        grpcClient = StreamingClientGRPC()
         _connectionState.value = ConnectionState.CONNECTING
         viewModelScope.launch {
             val isConnected = grpcClient.connectToServer() ?: false

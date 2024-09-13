@@ -19,7 +19,8 @@ import java.nio.channels.FileChannel
 
 
 object Constants {
-    const val MODEL_FILE_NAME: String = "mnistTrain1.tflite" // mimnist.tflite tambien funciona
+    const val MODEL_FILE_NAME: String = "mobileNetV2.tflite"
+    const val CHECKPOINT_FILE_NAME: String = "checkpoint_mobileNetV2.ckpt" // entrenado con +200
 
 }
 object Values {

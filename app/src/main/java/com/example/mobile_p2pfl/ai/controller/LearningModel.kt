@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import com.example.mobile_p2pfl.ai.LearningModelController
+import com.example.mobile_p2pfl.common.Constants.CHECKPOINT_FILE_NAME
 import com.example.mobile_p2pfl.common.Device
 import com.example.mobile_p2pfl.common.Recognition
 import com.example.mobile_p2pfl.common.TrainingSample
@@ -55,6 +56,9 @@ class LearningModel(
     private val lock = Any()
 
 
+    fun isModelInitialized(): Boolean {
+        return interpreter != null
+    }
     /*****************SETUP*********************/
 
     // Initialize LearningModel TFLite interpreter.
@@ -206,7 +210,7 @@ class LearningModel(
 
     // Start the training process.
     // With all samples at once (does not work)
-    fun startTraining2() {
+    private fun startTraining2() {
         if (interpreter == null) {
             initModelInterpreter()
         }
@@ -226,6 +230,11 @@ class LearningModel(
             )
         }
 
+
+        val inputTensor = interpreter!!.getInputTensor(0)
+        val inputShape = inputTensor.shape()
+        Log.d(MODEL_LOG_TAG, "Input shape: ${inputShape.contentToString()}")
+
         executor?.execute {
             synchronized(lock) {
                 var avgLoss: Float
@@ -239,8 +248,8 @@ class LearningModel(
                     trainingSamples.shuffle()
 
                     trainingBatchesIterator(trainBatchSize).forEach { samples ->
-
                         val batchSize = samples.size
+
                         val inputImageBuffer =
                             ByteBuffer.allocateDirect(batchSize * 4 * IMG_SIZE * IMG_SIZE).apply {
                                 order(ByteOrder.nativeOrder())
@@ -299,7 +308,7 @@ class LearningModel(
 
     // Save the model to the checkpoint
     override fun saveModel() {
-        val outputFile = File(context.filesDir, "checkpoint.ckpt")
+        val outputFile = File(context.filesDir, CHECKPOINT_FILE_NAME)
         val inputs: MutableMap<String, Any> = HashMap()
         inputs["checkpoint_path"] = outputFile.absolutePath
         val outputs: Map<String, Any> = HashMap()
@@ -310,7 +319,7 @@ class LearningModel(
 
     // Restore the model from the checkpoint
     override fun restoreModel() {
-        val outputFile = File(context.filesDir, "checkpoint.ckpt")
+        val outputFile = File(context.filesDir, CHECKPOINT_FILE_NAME)
         if (outputFile.exists()) {
             val inputs: MutableMap<String, Any> = HashMap()
             inputs["checkpoint_path"] = outputFile.absolutePath

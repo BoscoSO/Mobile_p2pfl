@@ -140,6 +140,15 @@ class TrainingFragment : Fragment() {
     }
 
     private fun loadNewSamples(): Boolean {
+        if (!masterViewModel.modelController.isModelInitialized()) {
+            Toast.makeText(
+                binding.root.context,
+                R.string.exception_no_model,
+                Toast.LENGTH_LONG
+            ).show()
+            return false
+        }
+
         val trainer = masterViewModel.modelController
         val samples: List<TrainingViewModel.TrainingSample> =
             trainingViewModel._trainningSamples.value ?: emptyList()

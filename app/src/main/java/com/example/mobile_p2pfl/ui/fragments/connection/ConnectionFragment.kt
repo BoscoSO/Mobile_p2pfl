@@ -20,6 +20,9 @@ import com.example.mobile_p2pfl.ui.ConnectionState
 import com.example.mobile_p2pfl.ui.MasterViewModel
 
 import io.grpc.stub.StreamObserver
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 
 class ConnectionFragment : Fragment() {
@@ -76,25 +79,33 @@ class ConnectionFragment : Fragment() {
 
         binding.btnFetchModel.setOnClickListener {
 
+            CoroutineScope(Dispatchers.Main).launch {
+                masterViewModel.grpcClient.getModel(binding.root.context)
+                //masterViewModel.grpcClient.fetchModel(binding.root.context)
+                //masterViewModel.initializeModelController(binding.root.context,2)
+            }
+
         }
         binding.btnSendModel.setOnClickListener {
-
-            masterViewModel.grpcClient.sendModel(
-                binding.root.context,
-                object : StreamObserver<ResponseMessage> {
-
-                    override fun onNext(value: ResponseMessage) {
-                        Log.i(GRPC_LOG_TAG, "Async Response: " + value.error)
-                    }
-
-                    override fun onError(t: Throwable) {
-                        Log.e(GRPC_LOG_TAG, "Error in async call: " + t.message)
-                    }
-
-                    override fun onCompleted() {
-                        Log.i(GRPC_LOG_TAG, "Async call completed")
-                    }
-                })
+            CoroutineScope(Dispatchers.Main).launch {
+                masterViewModel.grpcClient.sendWeights(binding.root.context)
+//                masterViewModel.grpcClient.sendModel(
+//                    binding.root.context,
+//                    object : StreamObserver<ResponseMessage> {
+//
+//                        override fun onNext(value: ResponseMessage) {
+//                            Log.i(GRPC_LOG_TAG, "Async Response: " + value.error)
+//                        }
+//
+//                        override fun onError(t: Throwable) {
+//                            Log.e(GRPC_LOG_TAG, "Error in async call: " + t.message)
+//                        }
+//
+//                        override fun onCompleted() {
+//                            Log.i(GRPC_LOG_TAG, "Async call completed")
+//                        }
+//                    })
+            }
         }
 
         binding.btnDisconnect.setOnClickListener {

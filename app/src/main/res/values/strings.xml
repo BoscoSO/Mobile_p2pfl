@@ -34,6 +34,7 @@
     <string name="exception_failed_to_create_classifier">Failed to start the Classifier.</string>
     <string name="exception_failed_to_create_trainer">Failed to start the Trainer.</string>
     <string name="exception_training_in_progress">Training is in progress.</string>
+    <string name="exception_no_model">No model available.</string>
     <string name="exception_too_few_samples">Make sure you have at least a few samples.</string>
     <string name="tv_status_text">Status</string>
     <string name="sync_button_description">tries to reconnect to server</string>
@@ -43,7 +44,7 @@
     <string name="threads_min_value">1</string>
     <string name="add_sample_description">Add new sample to the training</string>
     <string name="clear_sample_description">Clears the sample`s board</string>
-    <string name="samples_lbl">"Collected Samples:"</string>
-    <string name="loaded_samples_lbl">"Loaded Samples:"</string>
+    <string name="samples_lbl">"Collected:"</string>
+    <string name="loaded_samples_lbl">"Loaded:"</string>
 
 </resources>

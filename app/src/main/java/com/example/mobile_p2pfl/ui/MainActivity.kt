@@ -10,7 +10,6 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.example.mobile_p2pfl.R
 import com.example.mobile_p2pfl.common.Device
-import com.example.mobile_p2pfl.common.saveModelToInternalStorage
 import com.example.mobile_p2pfl.databinding.ActivityMainBinding
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
@@ -43,8 +42,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun init(){
 
-        if(saveModelToInternalStorage(this) == null)
-            Log.e("MainActivity", "Error al copiar el fichero")
+//        if(saveModelToInternalStorage(this) == null)
+//            Log.e("MainActivity", "Error al copiar el fichero")
 
 
         masterViewModel = ViewModelProvider(this)[MasterViewModel::class.java]
