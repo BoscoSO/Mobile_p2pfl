@@ -59,6 +59,7 @@ class LearningModel(
     fun isModelInitialized(): Boolean {
         return interpreter != null
     }
+
     /*****************SETUP*********************/
 
     // Initialize LearningModel TFLite interpreter.
@@ -124,7 +125,7 @@ class LearningModel(
     // Add a training sample to the list.
     override fun addTrainingSample(image: Bitmap, number: Int) {
         val inputImageBuffer = preprocessImage(image)
-        val trainingSample = TrainingSample(inputImageBuffer, number)
+        val trainingSample = TrainingSample.fromByteBuffer(inputImageBuffer, number)
         trainingSamples.add(trainingSample)
     }
 
@@ -170,8 +171,7 @@ class LearningModel(
 
                     trainingBatchesIterator(trainBatchSize).forEach { samples ->
                         samples.forEach { sample ->
-                            // Crear buffers de entrada y salida para un solo ejemplo
-                            val inputImageBuffer = sample.image
+                            val inputImageBuffer = sample.toByteBuffer()
                             val labelBuffer = ByteBuffer.allocateDirect(4).apply {
                                 order(ByteOrder.nativeOrder())
                                 putInt(sample.label)
@@ -189,10 +189,10 @@ class LearningModel(
 
                             outputLossBuffer.rewind()
                             val loss = outputLossBuffer.float
-//                            Log.d(
-//                                TRAINER_LOG_TAG,
-//                                "Training Loss for sample: $loss, Time cost: $timeCost"
-//                            )
+                            Log.d(
+                                MODEL_LOG_TAG,
+                                "Training Loss for sample: $loss, Time cost: $timeCost"
+                            )
 
 
                             totalLoss += loss
@@ -264,7 +264,7 @@ class LearningModel(
 
                         // Llenar los buffers con los datos del lote
                         samples.forEach { sample ->
-                            inputImageBuffer.put(sample.image)
+                            inputImageBuffer.put(sample.toByteBuffer())
                             labelBuffer.putInt(sample.label)
                         }
 
@@ -342,7 +342,37 @@ class LearningModel(
         }
     }
 
+    /***************************************/// test
+    fun mnistTraining(){// test
 
+        val mnistLoader = MnistLoader()
+        var samples = mnistLoader.loadTrainingSamples(context,"training_samples.dat")
+        if (samples != null) {
+            trainingSamples.addAll(samples.subList(0,150))
+        }
+
+        for (i in 1 .. 9) {
+            samples = mnistLoader.loadTrainingSamples(context,"training_samples_$i.dat")
+            Log.d(MODEL_LOG_TAG, "Loaded ${samples!!.size} samples")
+            trainingSamples.addAll(samples.subList(0,150))
+            Log.d(MODEL_LOG_TAG, "Loaded ${trainingSamples.size} samples")
+        }
+        Log.d(MODEL_LOG_TAG, "Loaded ${trainingSamples.size} total samples")
+        //startTraining2()
+    }
+
+
+    fun savesamples(num: String) { // test
+
+        val mnistLoader = MnistLoader()
+        mnistLoader.saveTrainingSamples(context,  "training_samples_$num.dat", trainingSamples)
+    }
+
+    fun loadsamples(num: String): List<TrainingSample>? { // test
+
+        val mnistLoader = MnistLoader()
+        return mnistLoader.loadTrainingSamples(context,  "training_samples_$num.dat")
+    }
     /***************UTILS********************/
 
     // Preprocess the input image to byte buffer for model input
@@ -383,8 +413,6 @@ class LearningModel(
                 val toIndex: Int = nextIndex + trainBatchSize
                 nextIndex = toIndex
                 return if (toIndex >= trainingSamples.size) {
-                    // To keep batch size consistent, last batch may include some elements from the
-                    // next-to-last batch.
                     trainingSamples.subList(
                         trainingSamples.size - trainBatchSize,
                         trainingSamples.size

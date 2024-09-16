@@ -35,7 +35,8 @@ import kotlin.coroutines.resumeWithException
 class StreamingClientGRPC : IClientConnection {
 
     companion object {
-        private const val HOST: String = "172.30.231.18"
+//        private const val HOST: String = "172.30.231.18"
+        private const val HOST: String = "192.168.1.128"
         private const val PORT: Int = 50051
         private const val MAX_MESSAGE_SIZE = 4 * 1024 * 1024 // 4 MB
     }

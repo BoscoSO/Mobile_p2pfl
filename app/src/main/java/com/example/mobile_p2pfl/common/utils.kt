@@ -13,6 +13,7 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
+import java.io.Serializable
 import java.nio.ByteBuffer
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
@@ -20,7 +21,7 @@ import java.nio.channels.FileChannel
 
 object Constants {
     const val MODEL_FILE_NAME: String = "mobileNetV2.tflite"
-    const val CHECKPOINT_FILE_NAME: String = "checkpoint_mobileNetV2.ckpt" // entrenado con +200
+    const val CHECKPOINT_FILE_NAME: String = "checkpoint_mobileNetV2.ckpt"
 
 }
 object Values {
@@ -43,14 +44,29 @@ data class Recognition(
     val timeCost: Long
 )
 
-data class TrainingSample(val image: ByteBuffer, val label: Int) {
+data class TrainingSample(val image: ByteArray, val label: Int) : Serializable{
+    fun toByteBuffer(): ByteBuffer {
+        val buffer = ByteBuffer.allocateDirect(image.size)
+        buffer.put(image)
+        buffer.rewind()
+        return buffer
+    }
+    companion object {
+        fun fromByteBuffer(buffer: ByteBuffer, label: Int): TrainingSample {
+            buffer.rewind()
+            val byteArray = ByteArray(buffer.remaining())
+            buffer.get(byteArray)
+            return TrainingSample(byteArray, label)
+        }
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
         other as TrainingSample
 
-        if (image != other.image) return false
+        if (!image.contentEquals(other.image)) return false
         if (label != other.label) return false
 
         return true

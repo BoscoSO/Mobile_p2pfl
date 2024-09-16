@@ -12,12 +12,10 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.mobile_p2pfl.R
-import com.example.mobile_p2pfl.ai.controller.LearningModel
 import com.example.mobile_p2pfl.ai.controller.LearningModel.Companion.IMG_SIZE
 import com.example.mobile_p2pfl.common.Values.TRAINER_FRAG_LOG_TAG
 import com.example.mobile_p2pfl.databinding.FragmentTrainingBinding
 import com.example.mobile_p2pfl.ui.MasterViewModel
-import java.io.IOException
 
 class TrainingFragment : Fragment() {
 
@@ -66,7 +64,10 @@ class TrainingFragment : Fragment() {
                     )
                 trainingViewModel._oldTrainningSamples.value = emptyList()
                 loadNewSamples()
-                Log.v(TRAINER_FRAG_LOG_TAG, "loading old samples..." + trainingViewModel._trainningSamples.value!!.size)
+                Log.v(
+                    TRAINER_FRAG_LOG_TAG,
+                    "loading old samples..." + trainingViewModel._trainningSamples.value!!.size
+                )
             }
         }
     }
@@ -86,7 +87,7 @@ class TrainingFragment : Fragment() {
             binding.sbThreadsSelector.isEnabled = !isTraining
         }
         trainingViewModel.numThreads.observe(viewLifecycleOwner) { numThreads ->
-            if (masterViewModel._isTraining.value == false){
+            if (masterViewModel._isTraining.value == false) {
                 masterViewModel.initializeModelController(binding.root.context, numThreads)
                 setupTrainer()
             }
@@ -114,22 +115,35 @@ class TrainingFragment : Fragment() {
             }
         })
         binding.btnAddSample.setOnClickListener { addSampleClickListener() }
-        binding.btnClearSample.setOnClickListener { binding.fpvInferenceDraw.clear() }
+        binding.btnClearSample.setOnClickListener {
+            masterViewModel.modelController.mnistTraining()
+            //binding.fpvInferenceDraw.clear()
+        }
         binding.btnTraining.setOnClickListener { onTrainingClick() }
     }
 
     private fun onTrainingClick() {
+
+        //val number = binding.npNumber.value.toString() //test
+
         if (binding.btnTraining.isChecked) {
+            //masterViewModel.modelController.mnistTraining() //test
+
             if (loadNewSamples()) {
+                //masterViewModel.modelController.savesamples(number)// test
+
                 masterViewModel.modelController.startTraining()
                 masterViewModel._isTraining.value = true
                 Log.v(TRAINER_FRAG_LOG_TAG, "Training started")
             } else {
+
                 Log.v(TRAINER_FRAG_LOG_TAG, "Training couldn't start")
                 binding.btnTraining.isChecked = false
             }
 
         } else {
+//            val asd=masterViewModel.modelController.loadsamples(number)// test
+
             masterViewModel.modelController.pauseTraining()
             masterViewModel._isTraining.value = false
             masterViewModel.modelController.saveModel()
@@ -157,7 +171,7 @@ class TrainingFragment : Fragment() {
 
         if (samples.size > 2 || trainer.getSamplesSize() > 2) {
             for (sample in samples) {
-                trainer.addTrainingSample(sample.image, sample.number)
+                trainer.addTrainingSample(sample.image, sample.label)
             }
             trainingViewModel._oldTrainningSamples.value = oldSamples + samples
             trainingViewModel._trainningSamples.value = emptyList()
@@ -187,7 +201,6 @@ class TrainingFragment : Fragment() {
         trainingViewModel._trainningSamples.value = samples + newSample
         binding.fpvInferenceDraw.clear()
     }
-
 
 
     override fun onDestroyView() {

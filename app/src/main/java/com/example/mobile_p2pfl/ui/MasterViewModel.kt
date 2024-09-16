@@ -7,6 +7,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mobile_p2pfl.ai.controller.LearningModel
+import com.example.mobile_p2pfl.ai.testing.ModelControllerWithSignatures
 import com.example.mobile_p2pfl.common.Device
 import com.example.mobile_p2pfl.protocol.comms.ClientGRPC
 import com.example.mobile_p2pfl.protocol.comms.StreamingClientGRPC
@@ -38,7 +39,7 @@ class MasterViewModel : ViewModel() {
 
     /*******************************MODEL********************************************/
 
-    lateinit var modelController: LearningModel
+    lateinit var modelController: ModelControllerWithSignatures //todo testing training
 
     // whether is training or not
     val _isTraining = MutableLiveData<Boolean>().apply {
@@ -48,7 +49,7 @@ class MasterViewModel : ViewModel() {
 
 
     fun initializeModelController(context: Context, numThreads: Int, device: Device = Device.CPU) {
-        modelController = LearningModel(context, numThreads, device) //, Device.CPU
+        modelController = ModelControllerWithSignatures(context, numThreads) //, Device.CPU
         Log.v("MODEL CONTROLLER", "Model controller initialized numthreads: " + numThreads)
     }
 

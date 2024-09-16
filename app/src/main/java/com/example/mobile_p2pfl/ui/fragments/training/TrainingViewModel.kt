@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.mobile_p2pfl.ai.controller.LearningModel
 
 class TrainingViewModel() : ViewModel() {
 
@@ -34,6 +33,6 @@ class TrainingViewModel() : ViewModel() {
 
 
     // Training sample class
-    data class TrainingSample(val image: Bitmap, val number: Int)
+    data class TrainingSample(val image: Bitmap, val label: Int)
 
 }
