@@ -1,29 +1,40 @@
-
 // compile command:
-// python -m grpc_tools.protoc -I=proto2 --python_out=proto2 --grpc_python_out=proto2 proto2/node.proto --mypy_out=proto2
+// python -m grpc_tools.protoc -I=proto/streamingServerBidirectional --python_out=proto/streamingServerBidirectional --grpc_python_out=proto/streamingServerBidirectional proto/streamingServerBidirectional/node.proto --mypy_out=proto/streamingServerBidirectional
 
-    syntax = "proto3";
+syntax = "proto3";
 import "google/protobuf/empty.proto";
 
 option java_package ="com.example.mobile_p2pfl.protocol.proto";
 
 package node;
 
-message WeightChunk {
-    bytes chunk = 1;
-    bool is_last = 2;
+message HandshakeRequest {
+    string client_id = 1;
+    string version = 2;
 }
 
-message ModelChunk {
-    bytes chunk = 1;
-    bool is_last = 2;
+message HandshakeResponse {
+    string server_id = 1;
+    string session_id = 2;
 }
 
-message ResponseMessage {
-    optional string error = 1;
+message Message {
+    string source = 1;
+    int32 ttl = 2;
+    int64 hash = 3;
+    string cmd = 4;
+    repeated string args = 5;
+    optional int32 round = 6;
+    bytes payload = 7;
+    bool is_last = 8;
 }
 
-service NodeServices {
-    rpc send_weights(stream WeightChunk) returns (ResponseMessage);
-    rpc get_model(google.protobuf.Empty) returns (stream ModelChunk);
+message DisconnectRequest {
+    string session_id = 1;
+}
+
+service NodeService {
+    rpc Handshake(HandshakeRequest) returns (HandshakeResponse);
+    rpc Disconnect(DisconnectRequest) returns (google.protobuf.Empty);
+    rpc BidirectionalStream(stream Message) returns (stream Message);
 }

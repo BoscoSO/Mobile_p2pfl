@@ -116,8 +116,8 @@ class TrainingFragment : Fragment() {
         })
         binding.btnAddSample.setOnClickListener { addSampleClickListener() }
         binding.btnClearSample.setOnClickListener {
-            masterViewModel.modelController.mnistTraining()
-            //binding.fpvInferenceDraw.clear()
+            //masterViewModel.modelController.mnistTraining() // test
+            binding.fpvInferenceDraw.clear()
         }
         binding.btnTraining.setOnClickListener { onTrainingClick() }
     }

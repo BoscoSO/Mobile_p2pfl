@@ -10,7 +10,7 @@ interface IClientConnection {
 
     fun disconnect() : Boolean
 
-    suspend fun sendWeights(context: Context): Node.ResponseMessage
+    suspend fun sendWeights(context: Context)// : Node.ResponseMessage
 
     suspend fun getModel(context: Context): ByteArray
 

@@ -2,25 +2,15 @@ package com.example.mobile_p2pfl.protocol.comms
 
 import android.content.Context
 import android.util.Log
-import com.example.mobile_p2pfl.common.Constants.MODEL_FILE_NAME
 import com.example.mobile_p2pfl.common.Values.GRPC_LOG_TAG
 import com.example.mobile_p2pfl.protocol.IClientConnection
-import com.example.mobile_p2pfl.protocol.proto.Node.ResponseMessage
-import com.example.mobile_p2pfl.protocol.proto.NodeServicesGrpc
-import com.example.mobile_p2pfl.protocol.proto.NodeServicesGrpc.NodeServicesBlockingStub
-import com.example.mobile_p2pfl.protocol.proto.NodeServicesGrpc.NodeServicesStub
-import com.google.protobuf.ByteString
-import com.google.protobuf.Empty
 import io.grpc.ConnectivityState
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
-import io.grpc.stub.StreamObserver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileOutputStream
 import java.util.concurrent.TimeUnit
 
 
@@ -32,17 +22,17 @@ class ClientGRPC : IClientConnection {
     }
 
     private var channel: ManagedChannel? = null
-    private var blockingStub: NodeServicesBlockingStub? = null
-    private var asyncStub: NodeServicesStub? = null
+//    private var blockingStub: NodeServicesBlockingStub? = null
+//    private var asyncStub: NodeServicesStub? = null
 
     init {
         channel = ManagedChannelBuilder.forAddress(HOST, PORT).apply {
             usePlaintext()
             executor(Dispatchers.IO.asExecutor())
         }.build()
-
-        blockingStub = NodeServicesGrpc.newBlockingStub(channel)
-        asyncStub = NodeServicesGrpc.newStub(channel);
+//
+//        blockingStub = NodeServicesGrpc.newBlockingStub(channel)
+//        asyncStub = NodeServicesGrpc.newStub(channel);
     }
 
     override suspend fun connectToServer(): Boolean = withContext(Dispatchers.IO) {
@@ -62,8 +52,8 @@ class ClientGRPC : IClientConnection {
                 executor(Dispatchers.IO.asExecutor())
             }.build()
 
-            blockingStub = NodeServicesGrpc.newBlockingStub(channel)
-            asyncStub = NodeServicesGrpc.newStub(channel);
+//            blockingStub = NodeServicesGrpc.newBlockingStub(channel)
+//            asyncStub = NodeServicesGrpc.newStub(channel);
 
             // Wait for the connection to be established
             while (channel!!.getState(true) != ConnectivityState.READY) {
@@ -123,7 +113,7 @@ class ClientGRPC : IClientConnection {
 
 
     // se cambio el estilo del proto
-    override suspend fun sendWeights(context: Context): ResponseMessage {
+    override suspend fun sendWeights(context: Context){//: ResponseMessage {
         TODO("Not yet implemented")
 //        val file = File(context.filesDir, "checkpoint.ckpt")
 //        val weightsData = file.readBytes()
