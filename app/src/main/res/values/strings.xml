@@ -36,7 +36,7 @@
     <string name="exception_training_in_progress">Training is in progress.</string>
     <string name="exception_no_model">No model available.</string>
     <string name="exception_too_few_samples">Make sure you have at least a few samples.</string>
-    <string name="tv_status_text">Status</string>
+    <string name="tv_status_text">Last call: </string>
     <string name="sync_button_description">tries to reconnect to server</string>
     <string name="btn_training">Start Training</string>
     <string name="threads_lbl">Threads:</string>

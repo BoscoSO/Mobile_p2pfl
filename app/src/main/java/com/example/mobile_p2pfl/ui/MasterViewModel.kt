@@ -7,10 +7,12 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mobile_p2pfl.ai.controller.LearningModel
-import com.example.mobile_p2pfl.ai.testing.ModelControllerWithSignatures
 import com.example.mobile_p2pfl.common.Device
-import com.example.mobile_p2pfl.protocol.comms.ClientGRPC
-import com.example.mobile_p2pfl.protocol.comms.StreamingClientGRPC
+import com.example.mobile_p2pfl.common.GrpcEventListener
+import com.example.mobile_p2pfl.common.Values.GRPC_LOG_TAG
+import com.example.mobile_p2pfl.protocol.comms.BidirectionalClientGRPC
+import com.example.mobile_p2pfl.ui.fragments.connection.ConnectionViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MasterViewModel : ViewModel() {
@@ -20,15 +22,35 @@ class MasterViewModel : ViewModel() {
     val _connectionState = MutableLiveData<ConnectionState>()
     val connectionState: LiveData<ConnectionState> = _connectionState
 
-    lateinit var grpcClient: StreamingClientGRPC //ClientGRPC
+    var grpcClient: BidirectionalClientGRPC = BidirectionalClientGRPC() //StreamingClientGRPC //ClientGRPC
 
-    fun initializeConnection() {
-        grpcClient = StreamingClientGRPC()
+    fun initializeConnection(context: Context ) {
+        grpcClient = BidirectionalClientGRPC(context)
+    }
+
+    fun connect(loadingListener: GrpcEventListener ) {
+        grpcClient.setEventListener(loadingListener)
+
         _connectionState.value = ConnectionState.CONNECTING
         viewModelScope.launch {
-            val isConnected = grpcClient.connectToServer() ?: false
+            var isConnected = grpcClient.checkConnection()
+
+            val timeout = 10_000L  // Límite de tiempo 10 segundos
+            val startTime = System.currentTimeMillis()
+            while (!isConnected) {
+                if (System.currentTimeMillis() - startTime > timeout) {
+                    Log.e(GRPC_LOG_TAG, "Connection timeout exceeded.")
+                    break
+                }
+
+                delay(100)  // Wait before checking the connection again
+                isConnected = grpcClient.checkConnection()
+            }
             _connectionState.value =
                 if (isConnected) ConnectionState.CONNECTED else ConnectionState.DISCONNECTED
+            if (isConnected) {
+                grpcClient.handshake()
+            }
         }
     }
 
@@ -39,7 +61,7 @@ class MasterViewModel : ViewModel() {
 
     /*******************************MODEL********************************************/
 
-    lateinit var modelController: ModelControllerWithSignatures //todo testing training
+    lateinit var modelController: LearningModel
 
     // whether is training or not
     val _isTraining = MutableLiveData<Boolean>().apply {
@@ -49,8 +71,8 @@ class MasterViewModel : ViewModel() {
 
 
     fun initializeModelController(context: Context, numThreads: Int, device: Device = Device.CPU) {
-        modelController = ModelControllerWithSignatures(context, numThreads) //, Device.CPU
-        Log.v("MODEL CONTROLLER", "Model controller initialized numthreads: " + numThreads)
+        modelController = LearningModel(context, numThreads, device) //, Device.CPU
+        Log.v("MODEL CONTROLLER", "Model controller initialized numthreads: $numThreads")
     }
 
 

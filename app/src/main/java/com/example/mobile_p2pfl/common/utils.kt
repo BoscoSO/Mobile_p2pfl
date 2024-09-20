@@ -119,3 +119,11 @@ fun saveModelToInternalStorage(context: Context): String? {
 
     return outFile.absolutePath
 }
+
+
+
+interface GrpcEventListener {
+    fun onLoadingStarted()
+    fun onLoadingFinished()
+    fun onError(message: String)
+}

@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.example.mobile_p2pfl.common.Constants.CHECKPOINT_FILE_NAME
 import com.example.mobile_p2pfl.common.Constants.MODEL_FILE_NAME
+import com.example.mobile_p2pfl.common.GrpcEventListener
 import com.example.mobile_p2pfl.common.Values.GRPC_LOG_TAG
 import com.example.mobile_p2pfl.protocol.proto.Node
 import com.example.mobile_p2pfl.protocol.proto.NodeServiceGrpc
@@ -23,7 +24,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.resumeWithException
 
-class BidirectionalClientGRPC(val context: Context) {
+class BidirectionalClientGRPC(val context: Context? = null) {
 
     companion object {
         //        private const val HOST: String = "172.30.231.18"
@@ -43,9 +44,6 @@ class BidirectionalClientGRPC(val context: Context) {
 
     init {
         channel = ManagedChannelBuilder.forAddress(HOST, PORT).apply {
-//                if (uri.scheme == "https") {
-//                    useTransportSecurity()
-//                } else
             usePlaintext()
             maxInboundMessageSize(MAX_MESSAGE_SIZE)
             executor(Dispatchers.IO.asExecutor())
@@ -60,7 +58,7 @@ class BidirectionalClientGRPC(val context: Context) {
             .setClientId(clientId)
             .setVersion("1.0")
             .build()
-
+        sessionId=null
         try {
             val response = blockingStub?.handshake(request)
             sessionId = response?.sessionId
@@ -68,6 +66,7 @@ class BidirectionalClientGRPC(val context: Context) {
             startBidirectionalStream()
         } catch (e: Exception) {
             Log.e(GRPC_LOG_TAG, "Handshake failed: ${e.message}")
+            eventListener!!.onError("no signal")
         }
     }
 
@@ -79,13 +78,13 @@ class BidirectionalClientGRPC(val context: Context) {
 
             try {
                 blockingStub?.disconnect(request)
-                println("Disconnected successfully")
+                Log.d(GRPC_LOG_TAG, "Disconnect successful")
                 isRunning.set(false)
                 bidirectionalStream?.onCompleted()
             } catch (e: Exception) {
-                println("Disconnect failed: ${e.message}")
+                Log.e(GRPC_LOG_TAG, "Disconnect failed: ${e.message}")
             }
-        } ?: println("No active session to disconnect")
+        } ?: Log.e(GRPC_LOG_TAG, "Session ID is null")
     }
 
     private suspend fun startBidirectionalStream() {
@@ -99,11 +98,11 @@ class BidirectionalClientGRPC(val context: Context) {
                         override fun onNext(message: Node.Message) {
                             when (message.cmd) {
                                 "HEARTBEAT" -> handleHeartbeat()
-                                "INIT_MODEL_RESPONSE" -> handleInitModel(message.payload,message.isLast)
-                                "SET_MODEL_RESPONSE" -> Log.d(
-                                    GRPC_LOG_TAG,
-                                    "Received message set model response: ${message.getArgs(0)}"
+                                "INIT_MODEL_RESPONSE" -> handleInitModelResponse(
+                                    message.payload,
+                                    message.isLast
                                 )
+                                "SET_MODEL_RESPONSE" -> handleSetModelResponse(message)
 
                                 else -> Log.d(GRPC_LOG_TAG, "Received message: ${message.cmd}")
                             }
@@ -160,12 +159,30 @@ class BidirectionalClientGRPC(val context: Context) {
     }
 
 
+    private var eventListener: GrpcEventListener? = null
+    fun setEventListener(listener: GrpcEventListener) {
+        this.eventListener = listener
+    }
+
+
     fun sendWeights() {
-        if(!isRunning.get()){
-            Log.e(GRPC_LOG_TAG, "Not connected")
+        if (this.eventListener == null){
+            Log.e(GRPC_LOG_TAG, "eventListener is null")
             return
         }
-        val file = File(context.filesDir, CHECKPOINT_FILE_NAME)
+        this.eventListener!!.onLoadingStarted()
+
+        if (!isRunning.get()) {
+            Log.e(GRPC_LOG_TAG, "Not connected")
+            this.eventListener!!.onError("Not connected")
+            return
+        }
+        val file = File(context!!.filesDir, CHECKPOINT_FILE_NAME)
+        if (!file.exists()) {
+            Log.e(GRPC_LOG_TAG, "Weights file not found")
+            this.eventListener!!.onError("Weights file not found")
+            return
+        }
         val weightsData = file.readBytes()
 
         try {
@@ -187,14 +204,22 @@ class BidirectionalClientGRPC(val context: Context) {
 
         } catch (e: Exception) {
             bidirectionalStream?.onError(e)
+            this.eventListener!!.onError("can't send weights")
             throw e
         }
 
     }
 
     fun initModel() {
-        if(!isRunning.get()){
+        if (this.eventListener == null){
+            Log.e(GRPC_LOG_TAG, "eventListener is null")
+            return
+        }
+        this.eventListener!!.onLoadingStarted()
+
+        if (!isRunning.get()) {
             Log.e(GRPC_LOG_TAG, "Not connected")
+            this.eventListener!!.onError("Not connected")
             return
         }
         val request = Node.Message.newBuilder()
@@ -207,6 +232,46 @@ class BidirectionalClientGRPC(val context: Context) {
 
     }
 
+
+    // Variable para acumular el modelo
+    private var modelOutputStream: FileOutputStream? = null
+
+    private fun handleInitModelResponse(payload: ByteString, isLast: Boolean) {
+        try {
+            if (modelOutputStream == null) { //first time
+                val outFile = File(context!!.filesDir, MODEL_FILE_NAME)
+                modelOutputStream = FileOutputStream(outFile)
+                Log.d(GRPC_LOG_TAG, "Model file initialized: ${outFile.absolutePath}")
+            }
+
+            val chunk = payload.toByteArray()
+            modelOutputStream?.write(chunk)
+
+            if (isLast) { //last time
+                modelOutputStream?.flush()
+                modelOutputStream?.close()
+                modelOutputStream = null
+
+
+                this.eventListener!!.onLoadingFinished()
+
+                Log.d(GRPC_LOG_TAG, "Model received and saved successfully.")
+            }
+        } catch (e: Exception) {
+            this.eventListener!!.onError("Can't save model")
+            Log.e(GRPC_LOG_TAG, "Error receiving or saving model", e)
+        }
+    }
+
+    private fun handleSetModelResponse(message: Node.Message) {
+        if (this.eventListener != null)
+            this.eventListener!!.onLoadingFinished()
+        else
+            Log.e(GRPC_LOG_TAG, "sendWeightsListener is null")
+
+        Log.d(GRPC_LOG_TAG, "Received message set model response: ${message.getArgs(0)}")
+    }
+
     private fun handleHeartbeat() {
         Log.d(GRPC_LOG_TAG, "Received heartbeat")
         val heartbeatResponse = Node.Message.newBuilder()
@@ -216,82 +281,5 @@ class BidirectionalClientGRPC(val context: Context) {
             .build()
         bidirectionalStream?.onNext(heartbeatResponse)
     }
-
-
-    // Variables para acumular el modelo
-    private var modelOutputStream: FileOutputStream? = null
-    private fun handleInitModel(payload: ByteString, isLast: Boolean) {
-        try {
-            if (modelOutputStream == null) {
-                val outFile = File(context.filesDir, MODEL_FILE_NAME)
-                modelOutputStream = FileOutputStream(outFile)
-
-                Log.d(GRPC_LOG_TAG, "Model file initialized: ${outFile.absolutePath}")
-            }
-
-            val chunk = payload.toByteArray()
-            modelOutputStream?.write(chunk)
-
-            if (isLast) {
-                modelOutputStream?.flush()
-                modelOutputStream?.close()
-                modelOutputStream = null
-
-                Log.d(GRPC_LOG_TAG, "Model received and saved successfully.")
-            }
-        } catch (e: Exception) {
-            Log.e(GRPC_LOG_TAG, "Error receiving or saving model", e)
-        }
-    }
-
-
-//    suspend fun getModel(): ByteArray = withContext(Dispatchers.IO) {
-//        suspendCancellableCoroutine { continuation ->
-//            val modelData = mutableListOf<ByteArray>()
-//
-//
-//            asyncStub!!.getModel(
-//                Empty.getDefaultInstance(),
-//                object : StreamObserver<Node.ModelChunk> {
-//                    override fun onNext(chunk: Node.ModelChunk) {
-//                        modelData.add(chunk.chunk.toByteArray())
-//                    }
-//
-//                    override fun onError(t: Throwable) {
-//                        continuation.resumeWithException(t)
-//                    }
-//
-//                    override fun onCompleted() {
-//                        var outputStream: FileOutputStream? = null
-//                        val outFile = File(context.filesDir, MODEL_FILE_NAME)
-//
-//                        try {
-//                            outputStream = FileOutputStream(outFile)
-//                            val completeModel = ByteArrayOutputStream().use { outputStr ->
-//                                modelData.forEach { chunk ->
-//                                    outputStr.write(chunk)
-//
-//                                    outputStream.write(chunk)
-//                                }
-//                                outputStr.toByteArray()
-//                            }
-//                            outputStream.flush()
-//
-//                            Log.d(
-//                                "ModelRetrieval",
-//                                "Model saved successfully: ${outFile.absolutePath}"
-//                            )
-//
-//                            continuation.resume(completeModel)
-//                        } catch (e: Exception) {
-//                            Log.e("ModelRetrieval", "Error retrieving or saving model", e)
-//                            continuation.resumeWithException(e)
-//                        } finally {
-//                            outputStream?.close()
-//                        }
-//                    }
-//                })
-//        }
-//    }
 
 }
