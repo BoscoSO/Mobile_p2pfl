@@ -49,6 +49,8 @@ class ConnectionFragment : Fragment() {
         override fun onError(message: String) {
             connectionViewModel.setError(message)
             connectionViewModel.stopLoading()
+            if(message == "END")
+                masterViewModel._connectionState.postValue(ConnectionState.DISCONNECTED)
         }
     }
 
@@ -127,30 +129,28 @@ class ConnectionFragment : Fragment() {
             if (connectionViewModel.sendLoading.value == true)
                 Toast.makeText(
                     binding.root.context,
-                    "Otra Peticion esta en curso",
+                    "Wait for the last request to finish",
                     Toast.LENGTH_SHORT
                 ).show()
-            else
-                CoroutineScope(Dispatchers.IO).launch {
-                    masterViewModel.grpcClient.initModel()
+            else  masterViewModel.initModel()
 
+//                CoroutineScope(Dispatchers.IO).launch {
 //                masterViewModel.grpcClient.getModel(binding.root.context)
 //                //masterViewModel.grpcClient.fetchModel(binding.root.context)
 //                //masterViewModel.initializeModelController(binding.root.context,2)
-                }
+//                }
 
         }
         binding.btnSendModel.setOnClickListener {
             if (connectionViewModel.sendLoading.value == true)
                 Toast.makeText(
                     binding.root.context,
-                    "Otra Peticion esta en curso",
+                    "Wait for the last request to finish",
                     Toast.LENGTH_SHORT
                 ).show()
-            else
-                CoroutineScope(Dispatchers.IO).launch {
-                    masterViewModel.grpcClient.sendWeights()
+            else masterViewModel.sendWeights()
 
+//                CoroutineScope(Dispatchers.IO).launch {
 //                masterViewModel.grpcClient.sendWeights(binding.root.context)
 ////                masterViewModel.grpcClient.sendModel(
 ////                    binding.root.context,
@@ -168,11 +168,17 @@ class ConnectionFragment : Fragment() {
 ////                            Log.i(GRPC_LOG_TAG, "Async call completed")
 ////                        }
 ////                    })
-                }
+//                }
         }
 
         binding.btnDisconnect.setOnClickListener {
-            masterViewModel.disconnect()
+            if (connectionViewModel.sendLoading.value == true)
+                Toast.makeText(
+                    binding.root.context,
+                    "Wait for the last request to finish",
+                    Toast.LENGTH_SHORT
+                ).show()
+            else masterViewModel.disconnect()
         }
         binding.btnConnect.setOnClickListener {
             startPulseOff()
@@ -198,15 +204,9 @@ class ConnectionFragment : Fragment() {
         )
     }
 
-    private suspend fun initServer(): Boolean {
-
-        return true // masterViewModel.grpcClient.connectToServer()
-    }
-
 
     override fun onDestroyView() {
         super.onDestroyView()
-        //masterViewModel.grpcClient.disconnect()
         _binding = null
     }
 }

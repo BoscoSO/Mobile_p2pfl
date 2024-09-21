@@ -22,13 +22,14 @@ class MasterViewModel : ViewModel() {
     val _connectionState = MutableLiveData<ConnectionState>()
     val connectionState: LiveData<ConnectionState> = _connectionState
 
-    var grpcClient: BidirectionalClientGRPC = BidirectionalClientGRPC() //StreamingClientGRPC //ClientGRPC
+    var grpcClient: BidirectionalClientGRPC =
+        BidirectionalClientGRPC() //StreamingClientGRPC //ClientGRPC
 
-    fun initializeConnection(context: Context ) {
+    fun initializeConnection(context: Context) {
         grpcClient = BidirectionalClientGRPC(context)
     }
 
-    fun connect(loadingListener: GrpcEventListener ) {
+    fun connect(loadingListener: GrpcEventListener) {
         grpcClient.setEventListener(loadingListener)
 
         _connectionState.value = ConnectionState.CONNECTING
@@ -54,8 +55,28 @@ class MasterViewModel : ViewModel() {
         }
     }
 
+    fun sendWeights() {
+        viewModelScope.launch {
+            try {
+                grpcClient.sendWeights()
+            } catch (e: Exception) {
+                // Manejar errores al enviar pesos
+            }
+        }
+    }
+
+    fun initModel() {
+        viewModelScope.launch {
+            try {
+                grpcClient.initModel()
+            } catch (e: Exception) {
+                // Manejar errores al recibir el modelo
+            }
+        }
+    }
+
     fun disconnect() {
-        _connectionState.value = ConnectionState.DISCONNECTED
+        _connectionState.postValue(ConnectionState.DISCONNECTED)
         grpcClient.disconnect()
     }
 

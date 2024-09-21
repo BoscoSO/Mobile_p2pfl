@@ -20,8 +20,8 @@ import java.nio.channels.FileChannel
 
 
 object Constants {
-    const val MODEL_FILE_NAME: String = "mobileNetV2.tflite"
-    const val CHECKPOINT_FILE_NAME: String = "checkpoint_mobileNetV2.ckpt"
+    const val MODEL_FILE_NAME: String = "mnist20.tflite"
+    const val CHECKPOINT_FILE_NAME: String = "checkpoint_mnist20.ckpt"
 
 }
 object Values {

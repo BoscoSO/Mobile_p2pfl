@@ -9,12 +9,17 @@ import com.example.mobile_p2pfl.common.Values.GRPC_LOG_TAG
 import com.example.mobile_p2pfl.protocol.proto.Node
 import com.example.mobile_p2pfl.protocol.proto.NodeServiceGrpc
 import com.google.protobuf.ByteString
+import com.google.protobuf.Empty
 import io.grpc.ConnectivityState
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.stub.StreamObserver
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -22,105 +27,144 @@ import java.io.FileOutputStream
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-class BidirectionalClientGRPC(val context: Context? = null) {
+class BidirectionalClientGRPC(
+    private val context: Context? = null
+) {
 
     companion object {
         //        private const val HOST: String = "172.30.231.18"
-        private const val HOST: String = "192.168.1.128"
+        private const val HOST: String = "192.168.1.128"// por wifi
         private const val PORT: Int = 50051
         private const val MAX_MESSAGE_SIZE = 4 * 1024 * 1024 // 4 MB
     }
 
-    private var channel: ManagedChannel? = null
-    private var blockingStub: NodeServiceGrpc.NodeServiceBlockingStub? = null
-    private var asyncStub: NodeServiceGrpc.NodeServiceStub? = null
+    private val channel: ManagedChannel = ManagedChannelBuilder.forAddress(HOST, PORT)
+        .usePlaintext()
+        .maxInboundMessageSize(MAX_MESSAGE_SIZE)
+        .executor(Dispatchers.IO.asExecutor())
+        .build()
 
-    private var sessionId: String? = null
+    //private var blockingStub: NodeServiceGrpc.NodeServiceBlockingStub? = null
+    private var asyncStub = NodeServiceGrpc.newStub(channel)
     private val clientId = UUID.randomUUID().toString()
-    private val isRunning = AtomicBoolean(false)
+    private var sessionId: String? = null
+
+    /***********************Testing async********************************************/
+//    private val _messageFlow = MutableSharedFlow<Node.Message>()
+//    val messageFlow = _messageFlow.asSharedFlow()
+//    private val sendChannel = Channel<Node.Message>()
+
     private var bidirectionalStream: StreamObserver<Node.Message>? = null
+    private val isRunning = AtomicBoolean(false)
+    private var eventListener: GrpcEventListener? = null
 
-    init {
-        channel = ManagedChannelBuilder.forAddress(HOST, PORT).apply {
-            usePlaintext()
-            maxInboundMessageSize(MAX_MESSAGE_SIZE)
-            executor(Dispatchers.IO.asExecutor())
-        }.build()
 
-        blockingStub = NodeServiceGrpc.newBlockingStub(channel)
-        asyncStub = NodeServiceGrpc.newStub(channel);
-    }
+//    init {
+//        channel = ManagedChannelBuilder.forAddress(HOST, PORT).apply {
+//            usePlaintext()
+//            maxInboundMessageSize(MAX_MESSAGE_SIZE)
+//            executor(Dispatchers.IO.asExecutor())
+//        }.build()
+//
+//        blockingStub = NodeServiceGrpc.newBlockingStub(channel)
+//        asyncStub = NodeServiceGrpc.newStub(channel)
+//    }
 
-    suspend fun handshake() {
+
+    // Handshake with the server
+    suspend fun handshake() = suspendCancellableCoroutine<Unit> { continuation ->
         val request = Node.HandshakeRequest.newBuilder()
             .setClientId(clientId)
             .setVersion("1.0")
             .build()
-        sessionId=null
-        try {
-            val response = blockingStub?.handshake(request)
-            sessionId = response?.sessionId
-            Log.d(GRPC_LOG_TAG, "Handshake successful. Session ID: $sessionId")
-            startBidirectionalStream()
-        } catch (e: Exception) {
-            Log.e(GRPC_LOG_TAG, "Handshake failed: ${e.message}")
-            eventListener!!.onError("no signal")
-        }
+        sessionId = null
+
+
+        asyncStub.handshake(request, object : StreamObserver<Node.HandshakeResponse> {
+            override fun onNext(response: Node.HandshakeResponse) {
+                sessionId = response.sessionId
+                Log.d(GRPC_LOG_TAG, "Handshake successful. Session ID: $sessionId")
+                startBidirectionalStream()
+                continuation.resume(Unit)
+            }
+
+            override fun onError(t: Throwable) {
+                Log.e(GRPC_LOG_TAG, "Handshake failed: ${t.message}")
+                eventListener?.onError("No signal")
+                continuation.resumeWithException(t)
+            }
+
+            override fun onCompleted() {
+                // Not used for unary calls
+            }
+        })
     }
 
+    // Send a disconnect message to the server
     fun disconnect() {
         sessionId?.let { sid ->
             val request = Node.DisconnectRequest.newBuilder()
                 .setSessionId(sid)
                 .build()
 
-            try {
-                blockingStub?.disconnect(request)
-                Log.d(GRPC_LOG_TAG, "Disconnect successful")
-                isRunning.set(false)
-                bidirectionalStream?.onCompleted()
-            } catch (e: Exception) {
-                Log.e(GRPC_LOG_TAG, "Disconnect failed: ${e.message}")
-            }
+            asyncStub.disconnect(request, object : StreamObserver<Empty> {
+                override fun onNext(response: Empty) {
+                    // Not used for unary calls
+                }
+
+                override fun onError(t: Throwable) {
+                    Log.e(GRPC_LOG_TAG, "Disconnect failed: ${t.message}")
+                }
+
+                override fun onCompleted() {
+                    Log.d(GRPC_LOG_TAG, "Disconnect successful")
+                    isRunning.set(false)
+                    bidirectionalStream?.onCompleted()
+                }
+            })
+
+
         } ?: Log.e(GRPC_LOG_TAG, "Session ID is null")
     }
 
-    private suspend fun startBidirectionalStream() {
+    // Start the bidirectional stream with the server
+    private fun startBidirectionalStream() {
         isRunning.set(true)
 
-        withContext<Any?>(Dispatchers.IO) {
-            suspendCancellableCoroutine { continuation ->
-                bidirectionalStream =
-                    asyncStub?.bidirectionalStream(object : StreamObserver<Node.Message> {
+        bidirectionalStream =
+            asyncStub?.bidirectionalStream(object : StreamObserver<Node.Message> {
 
-                        override fun onNext(message: Node.Message) {
-                            when (message.cmd) {
-                                "HEARTBEAT" -> handleHeartbeat()
-                                "INIT_MODEL_RESPONSE" -> handleInitModelResponse(
-                                    message.payload,
-                                    message.isLast
-                                )
-                                "SET_MODEL_RESPONSE" -> handleSetModelResponse(message)
+                override fun onNext(message: Node.Message) {
+                    when (message.cmd) {
+                        "HEARTBEAT" -> handleHeartbeat()
+                        "INIT_MODEL_RESPONSE" -> handleInitModelResponse(
+                            message.payload,
+                            message.isLast
+                        )
 
-                                else -> Log.d(GRPC_LOG_TAG, "Received message: ${message.cmd}")
-                            }
-                        }
+                        "SET_MODEL_RESPONSE" -> handleSetModelResponse(message)
 
-                        override fun onError(t: Throwable) {
-                            Log.e(GRPC_LOG_TAG, "Stream error: ${t.message}")
-                            continuation.resumeWithException(t)
-                            isRunning.set(false)
-                        }
+                        else -> Log.d(GRPC_LOG_TAG, "Received message: ${message.cmd}")
+                    }
+                }
 
-                        override fun onCompleted() {
-                            Log.d(GRPC_LOG_TAG, "Stream completed")
-                            isRunning.set(false)
-                        }
-                    })
-            }
-        }
+                override fun onError(t: Throwable) {
+                    isRunning.set(false)
+                    Log.e(GRPC_LOG_TAG, "Stream error: ${t.message}")
+                    eventListener!!.onError("END")
+                    //continuation.resumeWithException(t)
+                }
+
+                override fun onCompleted() {
+                    Log.d(GRPC_LOG_TAG, "Stream completed")
+                    isRunning.set(false)
+                }
+            })
+
+
         // Start sending periodic messages (if needed)
 //        CoroutineScope(Dispatchers.IO).launch {
 //            while (isRunning.get()) {
@@ -130,43 +174,34 @@ class BidirectionalClientGRPC(val context: Context? = null) {
 //        }
     }
 
-
-    fun sendMessage(cmd: String, payload: ByteString) {
-        val message = Node.Message.newBuilder()
-            .setSource(clientId)
-            .setCmd(cmd)
-            .setPayload(payload) // Convert String to ByteString or byteArray
-            .build()
-        bidirectionalStream?.onNext(message)
-    }
-
-    fun checkConnection(): Boolean {
-        if (channel != null) {
-            return channel!!.getState(true) == ConnectivityState.READY
-        }
-        return false
-    }
-
+    // Close the client channel
     fun closeClient(): Boolean {
         disconnect()
-        return if (channel != null) {
-            if (!channel!!.isShutdown)
-                channel!!.shutdown().awaitTermination(5, TimeUnit.SECONDS)
-            true
-        } else {
-            false
-        }
+        if (!channel.isShutdown)
+            channel.shutdown().awaitTermination(5, TimeUnit.SECONDS)
+
+        return true
+
     }
 
+    /*************************Utilities**************************************************/
 
-    private var eventListener: GrpcEventListener? = null
+    // set listener for grpc events
     fun setEventListener(listener: GrpcEventListener) {
         this.eventListener = listener
     }
 
+    // Check if the client is connected to the server
+    fun checkConnection(): Boolean {
+        return channel.getState(true) == ConnectivityState.READY
+    }
 
+
+    /*************************SENDERS**************************************************/
+
+    // Send a message Set_model to the server
     fun sendWeights() {
-        if (this.eventListener == null){
+        if (this.eventListener == null) {
             Log.e(GRPC_LOG_TAG, "eventListener is null")
             return
         }
@@ -210,8 +245,10 @@ class BidirectionalClientGRPC(val context: Context? = null) {
 
     }
 
+
+    // Send a message Init_model to the server
     fun initModel() {
-        if (this.eventListener == null){
+        if (this.eventListener == null) {
             Log.e(GRPC_LOG_TAG, "eventListener is null")
             return
         }
@@ -232,10 +269,12 @@ class BidirectionalClientGRPC(val context: Context? = null) {
 
     }
 
+    /*************************HANDLERS**************************************************/
 
     // Variable para acumular el modelo
     private var modelOutputStream: FileOutputStream? = null
 
+    // Handle the response of the Init_model message
     private fun handleInitModelResponse(payload: ByteString, isLast: Boolean) {
         try {
             if (modelOutputStream == null) { //first time
@@ -263,6 +302,7 @@ class BidirectionalClientGRPC(val context: Context? = null) {
         }
     }
 
+    // Handle the response of the Set_model message
     private fun handleSetModelResponse(message: Node.Message) {
         if (this.eventListener != null)
             this.eventListener!!.onLoadingFinished()
@@ -272,6 +312,7 @@ class BidirectionalClientGRPC(val context: Context? = null) {
         Log.d(GRPC_LOG_TAG, "Received message set model response: ${message.getArgs(0)}")
     }
 
+    // Handle the heartbeat message
     private fun handleHeartbeat() {
         Log.d(GRPC_LOG_TAG, "Received heartbeat")
         val heartbeatResponse = Node.Message.newBuilder()
