@@ -15,6 +15,7 @@ import com.example.mobile_p2pfl.common.Device
 import com.example.mobile_p2pfl.common.Recognition
 import com.example.mobile_p2pfl.common.TrainingSample
 import com.example.mobile_p2pfl.common.Values
+import com.example.mobile_p2pfl.common.Values.MODEL_LOG_TAG
 import com.example.mobile_p2pfl.common.getMappedModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -351,6 +352,6 @@ class ModelControllerWithSignatures(
 
         const val IMG_SIZE = 28
         const val BATCH_SIZE = 20
-        const val MODEL_LOG_TAG = "ModelTrainer"
+
     }
 }
