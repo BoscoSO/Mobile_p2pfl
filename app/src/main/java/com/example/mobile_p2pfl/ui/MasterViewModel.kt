@@ -26,7 +26,7 @@ class MasterViewModel : ViewModel() {
         grpcClient = StreamingClientGRPC()
         _connectionState.value = ConnectionState.CONNECTING
         viewModelScope.launch {
-            val isConnected = grpcClient.connectToServer() ?: false
+            val isConnected = grpcClient.connectToServer()
             _connectionState.value =
                 if (isConnected) ConnectionState.CONNECTED else ConnectionState.DISCONNECTED
         }

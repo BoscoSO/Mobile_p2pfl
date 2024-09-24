@@ -20,8 +20,8 @@ import java.nio.channels.FileChannel
 
 
 object Constants {
-    const val MODEL_FILE_NAME: String = "mnist20.tflite"
-    const val CHECKPOINT_FILE_NAME: String = "checkpoint_mnist20.ckpt"
+    const val MODEL_FILE_NAME: String = "efficient_model.tflite"// todo probar modelos y generar ckpts
+    const val CHECKPOINT_FILE_NAME: String = "mnist_test.ckpt"
 
 }
 object Values {

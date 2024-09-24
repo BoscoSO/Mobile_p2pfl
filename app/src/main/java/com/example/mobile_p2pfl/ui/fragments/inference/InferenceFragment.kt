@@ -31,8 +31,8 @@ class InferenceFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val inferenceViewModel =
-            ViewModelProvider(this)[InferenceViewModel::class.java]
+//        val inferenceViewModel =
+//            ViewModelProvider(this)[InferenceViewModel::class.java]
 
         _binding = FragmentInferenceBinding.inflate(inflater, container, false)
         val root: View = binding.root

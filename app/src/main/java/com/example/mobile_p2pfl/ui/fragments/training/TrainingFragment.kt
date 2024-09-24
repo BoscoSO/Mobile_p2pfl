@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.mobile_p2pfl.R
 import com.example.mobile_p2pfl.ai.controller.LearningModel.Companion.IMG_SIZE
+import com.example.mobile_p2pfl.ai.controller.MnistLoader
 import com.example.mobile_p2pfl.common.Values.TRAINER_FRAG_LOG_TAG
 import com.example.mobile_p2pfl.databinding.FragmentTrainingBinding
 import com.example.mobile_p2pfl.ui.MasterViewModel
@@ -38,14 +39,10 @@ class TrainingFragment : Fragment() {
         _trainingViewModel = ViewModelProvider(this)[TrainingViewModel::class.java]
         masterViewModel = ViewModelProvider(requireActivity())[MasterViewModel::class.java]
 
-        init()
-
-        return root
-    }
-
-    private fun init() {
         initView()
         setupTrainer()
+
+        return root
     }
 
 
@@ -114,12 +111,18 @@ class TrainingFragment : Fragment() {
                 trainingViewModel._numThreads.value = seekBar!!.progress + 1
             }
         })
-        binding.btnAddSample.setOnClickListener { addSampleClickListener() }
+        binding.btnAddSample.setOnClickListener {
+            //MnistLoader().resavesamples(binding.root.context)
+            masterViewModel.modelController.startTraining2(masterViewModel.grpcClient)
+            //addSampleClickListener()
+        }
         binding.btnClearSample.setOnClickListener {
-            masterViewModel.modelController.mnistTraining()
+            masterViewModel.modelController.mnistTraining() // todo testing
             //binding.fpvInferenceDraw.clear()
         }
-        binding.btnTraining.setOnClickListener { onTrainingClick() }
+        binding.btnTraining.setOnClickListener {
+            //    onTrainingClick()
+        }
     }
 
     private fun onTrainingClick() {

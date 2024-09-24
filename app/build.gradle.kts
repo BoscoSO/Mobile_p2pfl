@@ -117,6 +117,7 @@ dependencies {
     //paintdrawing
     implementation(libs.finger.paint.view)
 
+
     //GRPC
     implementation(libs.grpc.okhttp)
     implementation(libs.grpc.protobuf.lite)
@@ -126,8 +127,12 @@ dependencies {
 
    // implementation(libs.protobuf.java)
     implementation(libs.grpc.android)
-
     implementation(libs.protobuf.gradle.plugin)
+
+
+    //temp
+   // implementation(libs.gson)
+
 
 
 }
