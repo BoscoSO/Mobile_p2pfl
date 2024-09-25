@@ -257,19 +257,22 @@ class ModelControllerWithSignatures(
                 var totalAccuracy = 0f
                 var totalValidationLoss = 0f
 
+                // process training set in batches
                 trainSet.shuffled().chunked(batchSize).forEach { batch ->
-                    val (batchLoss, batchAccuracy) = processBatch2(batch)
+                    val (batchLoss, batchAccuracy) = processBatch(batch)
                     totalLoss += batchLoss
                     totalAccuracy += batchAccuracy
                 }
                 val avgLoss = totalLoss / (trainSet.size / BATCH_SIZE)
                 val avgAccuracy = totalAccuracy / (trainSet.size / BATCH_SIZE)
 
+                // process validation set in batches
                 validationSet.shuffled().chunked(batchSize).forEach { batch ->
                     val batchLoss = validateModel(batch)
                     totalValidationLoss += batchLoss
                 }
                 val avgValidationLoss = totalValidationLoss / (trainSet.size / BATCH_SIZE)
+
 
                 onProgressUpdate(avgLoss, avgAccuracy, epoch, epochs)
                 Log.d(
@@ -282,7 +285,7 @@ class ModelControllerWithSignatures(
     }
 
 
-    private suspend fun processBatch2(batch: List<TrainingSample>): Pair<Float, Float> =
+    private suspend fun processBatch(batch: List<TrainingSample>): Pair<Float, Float> =
         withContext(Dispatchers.Default) {
             val inputBuffer =
                 ByteBuffer.allocateDirect(BATCH_SIZE * IMG_SIZE * IMG_SIZE * 4).apply {
@@ -317,43 +320,6 @@ class ModelControllerWithSignatures(
             outputAccuracyBuffer.rewind()
             outputLossBuffer.float to outputAccuracyBuffer.float
         }
-
-    private suspend fun processBatch(batch: List<TrainingSample>): Pair<Float, Float> =
-        withContext(Dispatchers.Default) {
-            var batchLoss = 0f
-            var batchAccuracy = 0f
-
-            batch.forEach { sample ->
-                val (loss, accuracy) = trainSample(sample)
-                batchLoss += loss
-                batchAccuracy += accuracy
-            }
-
-            batchLoss to batchAccuracy
-        }
-
-    private fun trainSample(sample: TrainingSample): Pair<Float, Float> {
-        val inputBuffer = sample.toByteBuffer()
-        val labelBuffer = ByteBuffer.allocateDirect(4).apply {
-            order(ByteOrder.nativeOrder())
-            putInt(sample.label)
-        }
-        val outputLossBuffer = ByteBuffer.allocateDirect(4).apply {
-            order(ByteOrder.nativeOrder())
-        }
-        val outputAccuracyBuffer = ByteBuffer.allocateDirect(4).apply {
-            order(ByteOrder.nativeOrder())
-        }
-
-        val inputs = mapOf("x" to inputBuffer, "y" to labelBuffer)
-        val outputs = mapOf("loss" to outputLossBuffer)
-
-        interpreter!!.runSignature(inputs, outputs, "train")
-
-        outputLossBuffer.rewind()
-        outputAccuracyBuffer.rewind()
-        return outputLossBuffer.float to outputAccuracyBuffer.float
-    }
 
     private suspend fun validateModel(validationSet: List<TrainingSample>): Float =
         withContext(Dispatchers.Default) {
@@ -391,14 +357,7 @@ class ModelControllerWithSignatures(
 
             outputLossBuffer.float
         }
-//        withContext(Dispatchers.Default) {
-//            var totalLoss = 0f
-//            validationSet.forEach { sample ->
-//                val (loss, _) = trainSample(sample)
-//                totalLoss += loss
-//            }
-//            totalLoss / validationSet.size
-//        }
+
 
 
     override fun pauseTraining() {
