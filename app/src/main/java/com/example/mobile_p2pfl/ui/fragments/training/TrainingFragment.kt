@@ -85,7 +85,7 @@ class TrainingFragment : Fragment() {
         }
         trainingViewModel.numThreads.observe(viewLifecycleOwner) { numThreads ->
             if (masterViewModel._isTraining.value == false) {
-                masterViewModel.initializeModelController(binding.root.context, numThreads)
+                masterViewModel.setNumThreads(numThreads)
                 setupTrainer()
             }
         }
@@ -113,29 +113,35 @@ class TrainingFragment : Fragment() {
         })
         binding.btnAddSample.setOnClickListener {
             //MnistLoader().resavesamples(binding.root.context)
-            masterViewModel.modelController.startTraining2(masterViewModel.grpcClient)
-            //addSampleClickListener()
+            //masterViewModel.modelController.startTraining2(masterViewModel.grpcClient)
+
+            addSampleClickListener()
         }
         binding.btnClearSample.setOnClickListener {
-            masterViewModel.modelController.mnistTraining() // todo testing
-            //binding.fpvInferenceDraw.clear()
+            binding.fpvInferenceDraw.clear()
         }
         binding.btnTraining.setOnClickListener {
-            //    onTrainingClick()
+            onTrainingClick()
         }
     }
 
     private fun onTrainingClick() {
 
-        //val number = binding.npNumber.value.toString() //test
+//        val number = binding.npNumber.value.toString() //test
 
         if (binding.btnTraining.isChecked) {
             //masterViewModel.modelController.mnistTraining() //test
 
             if (loadNewSamples()) {
-                //masterViewModel.modelController.savesamples(number)// test
+//                masterViewModel.modelController.saveSamples(number)// test
 
-                masterViewModel.modelController.startTraining()
+
+                try{
+                    masterViewModel.modelController.startTraining()
+                }catch (e:Exception){
+
+                    Log.v(TRAINER_FRAG_LOG_TAG, "Training couldn't start")
+                }
                 masterViewModel._isTraining.value = true
                 Log.v(TRAINER_FRAG_LOG_TAG, "Training started")
             } else {
@@ -172,7 +178,7 @@ class TrainingFragment : Fragment() {
         val oldSamples: List<TrainingViewModel.TrainingSample> =
             trainingViewModel._oldTrainningSamples.value ?: emptyList()
 
-        if (samples.size > 2 || trainer.getSamplesSize() > 2) {
+        if (samples.size > 8 || trainer.getSamplesSize() > 8) {
             for (sample in samples) {
                 trainer.addTrainingSample(sample.image, sample.label)
             }

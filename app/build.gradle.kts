@@ -107,7 +107,6 @@ dependencies {
     implementation(libs.tensorflow.lite.support)
 
     //implementation(libs.tensorflow.lite.metadata)
-
     //nueva
     implementation(libs.tensorflow.lite.select.tf.ops)// 2.9.0 version
     //implementation("org.tensorflow:tensorflow-lite-select-tf-ops:2.16.1")
@@ -130,8 +129,8 @@ dependencies {
     implementation(libs.protobuf.gradle.plugin)
 
 
-    //temp
-   // implementation(libs.gson)
+    //test
+
 
 
 

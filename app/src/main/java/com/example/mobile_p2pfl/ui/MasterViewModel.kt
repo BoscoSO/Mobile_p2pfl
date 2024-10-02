@@ -7,6 +7,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mobile_p2pfl.ai.controller.LearningModel
+import com.example.mobile_p2pfl.ai.controller.LearningModelTester
 import com.example.mobile_p2pfl.ai.testing.ModelControllerWithSignatures
 import com.example.mobile_p2pfl.common.Device
 import com.example.mobile_p2pfl.protocol.comms.ClientGRPC
@@ -39,7 +40,7 @@ class MasterViewModel : ViewModel() {
 
     /*******************************MODEL********************************************/
 
-    lateinit var modelController: ModelControllerWithSignatures //todo testing training
+    lateinit var modelController: LearningModelTester //ModelControllerWithSignatures //todo testing training
 
     // whether is training or not
     val _isTraining = MutableLiveData<Boolean>().apply {
@@ -49,10 +50,14 @@ class MasterViewModel : ViewModel() {
 
 
     fun initializeModelController(context: Context, numThreads: Int, device: Device = Device.CPU) {
-        modelController = ModelControllerWithSignatures(context, numThreads) //, Device.CPU
-        Log.v("MODEL CONTROLLER", "Model controller initialized numthreads: " + numThreads)
+        modelController = LearningModelTester(context) //, Device.CPU
+        modelController.setNumThreads(numThreads)
+        Log.v("MODEL CONTROLLER", "Model controller initialized numthreads: $numThreads")
     }
-
+    fun setNumThreads(numThreads: Int) {
+        modelController.setNumThreads(numThreads)
+        Log.v("MODEL CONTROLLER", "Model controller initialized numthreads: $numThreads")
+    }
 
     /*************************************************************************************/
     override fun onCleared() {

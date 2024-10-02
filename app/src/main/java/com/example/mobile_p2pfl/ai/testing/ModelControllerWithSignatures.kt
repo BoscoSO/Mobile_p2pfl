@@ -37,6 +37,8 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.FloatBuffer
+import java.nio.IntBuffer
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.max
@@ -53,7 +55,7 @@ class ModelControllerWithSignatures(
 
     private val batchSize: Int = BATCH_SIZE
     private val learningRate: Float = 0.001f
-    private val epochs: Int = 4
+    private val epochs: Int = 6
     private val validationSplit: Float = 0.2f
 
     private var trainingJob: Job? = null
@@ -120,6 +122,7 @@ class ModelControllerWithSignatures(
 
     private fun convertBitmapToByteBuffer(bitmap: Bitmap): ByteBuffer {
         val resizedBitmap = Bitmap.createScaledBitmap(bitmap, IMG_SIZE, IMG_SIZE, true)
+
         val byteBuffer = ByteBuffer.allocateDirect(4 * IMG_SIZE * IMG_SIZE).apply {
             order(ByteOrder.nativeOrder())
         }
@@ -149,36 +152,32 @@ class ModelControllerWithSignatures(
         val g = (color shr 8 and 0xFF)
         val b = (color and 0xFF)
         val grayscale = (0.299f * r + 0.587f * g + 0.114f * b)
-        return (255f - grayscale) / 255f
+        return  grayscale / 255f
     }
 
 
     //*****************temp FUNCTIONS****************//
-    fun mnistTraining() {// test
+    private fun addMultipleSamples(start: Int, end: Int) {// test
 
         val mnistLoader = MnistLoader()
         var samples = mnistLoader.loadTrainingSamples(context, "training_samples.dat")
         if (samples != null) {
-            trainingSamples.addAll(samples.subList(0, 150))
+            trainingSamples.addAll(samples.subList(start, end))
         }
 
         for (i in 1..9) {
             samples = mnistLoader.loadTrainingSamples(context, "training_samples_$i.dat")
-            Log.d(Values.MODEL_LOG_TAG, "Loaded ${samples!!.size} samples")
-            trainingSamples.addAll(samples.subList(0, 150))
-            Log.d(Values.MODEL_LOG_TAG, "Loaded ${trainingSamples.size} samples")
+            Log.d(Values.MODEL_LOG_TAG, "loaded samples: ${samples!!.size}")
+            trainingSamples.addAll(samples.subList(start, end))
         }
-        Log.d(Values.MODEL_LOG_TAG, "Loaded ${trainingSamples.size} total samples")
+        Log.d(Values.MODEL_LOG_TAG, "${trainingSamples.size} total samples")
         //startTraining2()
     }
-
-
     fun savesamples(num: String) { // test
 
         val mnistLoader = MnistLoader()
         mnistLoader.saveTrainingSamples(context, "training_samples_$num.dat", trainingSamples)
     }
-
     fun loadsamples(num: String): List<TrainingSample>? { // test
 
         val mnistLoader = MnistLoader()
@@ -224,8 +223,11 @@ class ModelControllerWithSignatures(
     private var isTraining: Boolean = false
 
     fun startTraining2(grpc: StreamingClientGRPC) {
+        addMultipleSamples(0,30)
         CoroutineScope(Dispatchers.IO).launch {
-            for (i in 1..15) {
+            var startIndex=0
+            var endIndex=30
+            for (i in 1..7) {
                 restoreModel()
                 startTraining()
                 isTraining = true
@@ -233,7 +235,11 @@ class ModelControllerWithSignatures(
                     delay(200) // Delay for 2 seconds before checking again
                 }
                 saveModel()
-
+                if(endIndex<=150){
+                    startIndex = endIndex
+                    endIndex += 30
+                    addMultipleSamples(startIndex, endIndex)
+                }
                 grpc.sendWeights(context)
             }
         }
@@ -259,7 +265,7 @@ class ModelControllerWithSignatures(
 
                 // process training set in batches
                 trainSet.shuffled().chunked(batchSize).forEach { batch ->
-                    val (batchLoss, batchAccuracy) = processBatch(batch)
+                    val (batchLoss, batchAccuracy) = processBatch2(batch)
                     totalLoss += batchLoss
                     totalAccuracy += batchAccuracy
                 }
@@ -267,17 +273,17 @@ class ModelControllerWithSignatures(
                 val avgAccuracy = totalAccuracy / (trainSet.size / BATCH_SIZE)
 
                 // process validation set in batches
-                validationSet.shuffled().chunked(batchSize).forEach { batch ->
-                    val batchLoss = validateModel(batch)
-                    totalValidationLoss += batchLoss
-                }
-                val avgValidationLoss = totalValidationLoss / (trainSet.size / BATCH_SIZE)
+//                validationSet.shuffled().chunked(batchSize).forEach { batch ->
+//                    val batchLoss = validateModel(batch)
+//                    totalValidationLoss += batchLoss
+//                }
+//                val avgValidationLoss = totalValidationLoss / (trainSet.size / BATCH_SIZE)
 
 
                 onProgressUpdate(avgLoss, avgAccuracy, epoch, epochs)
                 Log.d(
                     MODEL_LOG_TAG,
-                    "Epoch $epoch/$epochs -  Accuracy: $avgAccuracy. Loss: $avgLoss. Validation Loss: $avgValidationLoss"
+                    "Epoch $epoch/$epochs -  Accuracy: $avgAccuracy. Loss: $avgLoss."  // Validation Loss: $avgValidationLoss"
                 )
             }
             isTraining = false
@@ -320,7 +326,57 @@ class ModelControllerWithSignatures(
             outputAccuracyBuffer.rewind()
             outputLossBuffer.float to outputAccuracyBuffer.float
         }
+    private suspend fun processBatch2(batch: List<TrainingSample>): Pair<Float, Float> =
+        withContext(Dispatchers.Default) {
+            val inputBuffer = FloatBuffer.allocate(BATCH_SIZE* IMG_SIZE * IMG_SIZE)
+            val labelBuffer = IntBuffer.allocate(BATCH_SIZE)
 
+
+            batch.forEach { sample ->
+                inputBuffer.put(ensureNormalized(sample.image))
+                labelBuffer.put(sample.label)
+            }
+
+
+            inputBuffer.rewind()
+            labelBuffer.rewind()
+
+            val outputLossBuffer = FloatBuffer.allocate(1)
+            val outputAccuracyBuffer = FloatBuffer.allocate(1)
+
+            val inputs = mapOf(
+                "x" to inputBuffer,
+                "y" to labelBuffer
+            )
+            val outputs = mapOf("loss" to outputLossBuffer, "accuracy" to outputAccuracyBuffer)
+
+            interpreter!!.runSignature(inputs, outputs, "train_fixed_batch")
+
+
+            val loss = outputLossBuffer.get(0)
+            val accuracy = outputAccuracyBuffer.get(0)
+
+            loss to accuracy
+        }
+    private fun ensureNormalized(image: ByteArray): FloatArray {
+        val floatArray = FloatArray(IMG_SIZE* IMG_SIZE)
+        var maxValue = 0f
+
+        // First, find the maximum value
+        for (byte in image) {
+            val value = byte.toUByte().toFloat()
+            if (value > maxValue) {
+                maxValue = value
+            }
+        }
+
+        // Normalize based on the maximum value
+        val normalizationFactor = if (maxValue > 1.0f) 255.0f else 1.0f
+        for (i in image.indices) {
+            floatArray[i] = image[i].toUByte().toFloat() / normalizationFactor
+        }
+        return floatArray
+    }
     private suspend fun validateModel(validationSet: List<TrainingSample>): Float =
         withContext(Dispatchers.Default) {
             val inputBuffer =
