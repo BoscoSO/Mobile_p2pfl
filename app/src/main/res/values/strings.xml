@@ -46,5 +46,10 @@
     <string name="clear_sample_description">Clears the sample`s board</string>
     <string name="samples_lbl">"Collected:"</string>
     <string name="loaded_samples_lbl">"Loaded:"</string>
+    <string name="accuracy">Accuracy:</string>
+    <string name="loss">Loss:</string>
+    <string name="validation_accuracy">Validation accuracy:</string>
+    <string name="_0_00">0.00</string>
+    <string name="detect_icn_dscr">Classifies the image given in the drawing</string>
 
 </resources>
