@@ -14,8 +14,10 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.mobile_p2pfl.R
 import com.example.mobile_p2pfl.ai.controller.LearningModel.Companion.IMG_SIZE
 import com.example.mobile_p2pfl.ai.controller.MnistLoader
+import com.example.mobile_p2pfl.common.LearningModelEventListener
 import com.example.mobile_p2pfl.common.Values.TRAINER_FRAG_LOG_TAG
 import com.example.mobile_p2pfl.databinding.FragmentTrainingBinding
+import com.example.mobile_p2pfl.ui.ConnectionState
 import com.example.mobile_p2pfl.ui.MasterViewModel
 
 class TrainingFragment : Fragment() {
@@ -28,6 +30,27 @@ class TrainingFragment : Fragment() {
 
     private lateinit var masterViewModel: MasterViewModel
 
+    private val eventListener = object : LearningModelEventListener {
+        override fun updateProgress(loss: Float, accuracy: Float, validationAcc: Float) {
+            trainingViewModel.udateProgress(loss,accuracy,validationAcc)
+        }
+
+        override fun onLoadingStarted() {
+            trainingViewModel.setInfo("Training...")
+            trainingViewModel.startLoading()
+        }
+
+        override fun onLoadingFinished() {
+            trainingViewModel.setInfo("Done")
+            trainingViewModel.stopLoading()
+        }
+
+        override fun onError(message: String) {
+            trainingViewModel.setError(message)
+            trainingViewModel.stopLoading()
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -36,8 +59,12 @@ class TrainingFragment : Fragment() {
         _binding = FragmentTrainingBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-        _trainingViewModel = ViewModelProvider(this)[TrainingViewModel::class.java]
+        _trainingViewModel = ViewModelProvider(requireActivity())[TrainingViewModel::class.java]
         masterViewModel = ViewModelProvider(requireActivity())[MasterViewModel::class.java]
+
+        masterViewModel.modelController.setEventListener(eventListener)
+
+
 
         initView()
         setupTrainer()
@@ -54,18 +81,18 @@ class TrainingFragment : Fragment() {
                 Toast.LENGTH_LONG
             ).show()
         } else {
-            if (trainingViewModel._oldTrainningSamples.value!!.isNotEmpty()) {
-                trainingViewModel._trainningSamples.value =
-                    trainingViewModel._trainningSamples.value?.plus(
-                        trainingViewModel._oldTrainningSamples.value!!
-                    )
-                trainingViewModel._oldTrainningSamples.value = emptyList()
-                loadNewSamples()
-                Log.v(
-                    TRAINER_FRAG_LOG_TAG,
-                    "loading old samples..." + trainingViewModel._trainningSamples.value!!.size
-                )
-            }
+//            if (trainingViewModel._oldTrainningSamples.value!!.isNotEmpty()) {
+//                trainingViewModel._trainningSamples.value =
+//                    trainingViewModel._trainningSamples.value?.plus(
+//                        trainingViewModel._oldTrainningSamples.value!!
+//                    )
+//                trainingViewModel._oldTrainningSamples.value = emptyList()
+//                loadNewSamples()
+//                Log.v(
+//                    TRAINER_FRAG_LOG_TAG,
+//                    "loading old samples..." + trainingViewModel._trainningSamples.value!!.size
+//                )
+//            }
         }
     }
 
@@ -78,19 +105,44 @@ class TrainingFragment : Fragment() {
         binding.tvThreadsNumbLbl.text = trainingViewModel._numThreads.value.toString()
         binding.btnTraining.isChecked = masterViewModel._isTraining.value!!
 
-
         masterViewModel.isTraining.observe(viewLifecycleOwner) { isTraining ->
             binding.btnAddSample.isEnabled = !isTraining
             binding.sbThreadsSelector.isEnabled = !isTraining
+        }
+        trainingViewModel.info.observe(viewLifecycleOwner) { info ->
+            binding.tvInfoMsg.text = info
+            binding.tvInfoMsg.visibility = View.VISIBLE
+            binding.tvErrorMsg.visibility = View.INVISIBLE
+        }
+        trainingViewModel.error.observe(viewLifecycleOwner) { error ->
+            binding.tvErrorMsg.text = error
+            binding.tvErrorMsg.visibility = View.VISIBLE
+            binding.tvInfoMsg.visibility = View.INVISIBLE
+        }
+        trainingViewModel.lastLoss.observe(viewLifecycleOwner) { loss ->
+            binding.tvLossOut.text = loss.toString()
+        }
+        trainingViewModel.lastAccuracy.observe(viewLifecycleOwner) { accuracy ->
+            binding.tvAccOut.text = accuracy.toString()
+        }
+        trainingViewModel.lastValAccuracy.observe(viewLifecycleOwner) { accuracy ->
+            binding.tvValAccOut.text = accuracy.toString()
+        }
+        trainingViewModel.loading.observe(viewLifecycleOwner) { isLoading ->
+            if (isLoading)
+                binding.loadingProgressBar.visibility = View.VISIBLE
+            else{
+                binding.loadingProgressBar.visibility = View.INVISIBLE
+                binding.btnTraining.isChecked = false
+                masterViewModel._isTraining.value = false
+//                masterViewModel.modelController.saveModel() //todo
+            }
         }
         trainingViewModel.numThreads.observe(viewLifecycleOwner) { numThreads ->
             if (masterViewModel._isTraining.value == false) {
                 masterViewModel.setNumThreads(numThreads)
                 setupTrainer()
             }
-        }
-        trainingViewModel.trainningSamples.observe(viewLifecycleOwner) { samples ->
-            binding.tvSamplesNumbLbl.text = samples.size.toString()
         }
         trainingViewModel.loadedSamples.observe(viewLifecycleOwner) { samples ->
             Log.v(TRAINER_FRAG_LOG_TAG, "loaded samples: $samples")
@@ -118,7 +170,7 @@ class TrainingFragment : Fragment() {
             addSampleClickListener()
         }
         binding.btnClearSample.setOnClickListener {
-            binding.fpvInferenceDraw.clear()
+            binding.fpvSamplesDraw.clear()
         }
         binding.btnTraining.setOnClickListener {
             onTrainingClick()
@@ -126,43 +178,27 @@ class TrainingFragment : Fragment() {
     }
 
     private fun onTrainingClick() {
-
-//        val number = binding.npNumber.value.toString() //test
-
         if (binding.btnTraining.isChecked) {
-            //masterViewModel.modelController.mnistTraining() //test
-
-            if (loadNewSamples()) {
-//                masterViewModel.modelController.saveSamples(number)// test
-
-
+            if (checkModelAndSamples()) {
                 try{
                     masterViewModel.modelController.startTraining()
                 }catch (e:Exception){
-
                     Log.v(TRAINER_FRAG_LOG_TAG, "Training couldn't start")
                 }
                 masterViewModel._isTraining.value = true
                 Log.v(TRAINER_FRAG_LOG_TAG, "Training started")
             } else {
-
-                Log.v(TRAINER_FRAG_LOG_TAG, "Training couldn't start")
                 binding.btnTraining.isChecked = false
             }
 
         } else {
-//            val asd=masterViewModel.modelController.loadsamples(number)// test
-
             masterViewModel.modelController.pauseTraining()
-            masterViewModel._isTraining.value = false
-            masterViewModel.modelController.saveModel()
-
             Log.v(TRAINER_FRAG_LOG_TAG, "Training paused")
         }
 
     }
 
-    private fun loadNewSamples(): Boolean {
+    private fun checkModelAndSamples(): Boolean {
         if (!masterViewModel.modelController.isModelInitialized()) {
             Toast.makeText(
                 binding.root.context,
@@ -173,18 +209,8 @@ class TrainingFragment : Fragment() {
         }
 
         val trainer = masterViewModel.modelController
-        val samples: List<TrainingViewModel.TrainingSample> =
-            trainingViewModel._trainningSamples.value ?: emptyList()
-        val oldSamples: List<TrainingViewModel.TrainingSample> =
-            trainingViewModel._oldTrainningSamples.value ?: emptyList()
 
-        if (samples.size > 8 || trainer.getSamplesSize() > 8) {
-            for (sample in samples) {
-                trainer.addTrainingSample(sample.image, sample.label)
-            }
-            trainingViewModel._oldTrainningSamples.value = oldSamples + samples
-            trainingViewModel._trainningSamples.value = emptyList()
-            trainingViewModel._loadedSamples.value = trainer.getSamplesSize()
+        if (trainer.getSamplesSize() >= 8) {
             return true
         } else {
             Toast.makeText(
@@ -198,24 +224,26 @@ class TrainingFragment : Fragment() {
 
 
     private fun addSampleClickListener() {
-        val image: Bitmap = binding.fpvInferenceDraw.exportToBitmap(
+        if (binding.fpvSamplesDraw.empty) {
+            Toast.makeText(binding.root.context, R.string.please_write_a_digit, Toast.LENGTH_SHORT)
+                .show()
+            return
+        }
+        val image: Bitmap = binding.fpvSamplesDraw.exportToBitmap(
             IMG_SIZE, IMG_SIZE
         )
         val number = binding.npNumber.value
 
-        val samples: List<TrainingViewModel.TrainingSample> =
-            trainingViewModel._trainningSamples.value ?: emptyList()
-        val newSample = TrainingViewModel.TrainingSample(image, number)
+        masterViewModel.modelController.addTrainingSample(image, number)
+        trainingViewModel._loadedSamples.value = masterViewModel.modelController.getSamplesSize()
 
-        trainingViewModel._trainningSamples.value = samples + newSample
-        binding.fpvInferenceDraw.clear()
+        binding.fpvSamplesDraw.clear()
     }
 
 
     override fun onDestroyView() {
         super.onDestroyView()
-        //trainingViewModel._isTraining.value = false
-        //trainingViewModel._trainer.value!!.closeTrainer()
+
         _binding = null
     }
 

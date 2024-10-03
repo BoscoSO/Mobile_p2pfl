@@ -53,7 +53,6 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
         }
     }
 
-
     enum class Config(val signature: String, val batchSize: Int) {
         XS("train_fixed_batch_xs", 8),
         S("train_fixed_batch_s", 16),
@@ -69,7 +68,7 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
             else -> Config.L
         }
 
-    private var lastBatchSize: Int = 1
+//    private var lastBatchSize: Int = 1
 
 
     private var interpreter: Interpreter? = null
@@ -77,7 +76,7 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
     private var numThreadsOp: Int = 2
 
     init {
-        interpreter = createInterpreter(1)
+        interpreter = createInterpreter()
     }
 
     fun isModelInitialized(): Boolean {
@@ -85,39 +84,32 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
     }
 
     fun setNumberOfThreads(numThreads: Int) {
-
         numThreadsOp = numThreads
-        interpreter = createInterpreter(lastBatchSize)
+        interpreter = createInterpreter()
     }
 
-    fun getInferInterpreter(): Interpreter {
-        interpreter = createInterpreter(1)
-        return interpreter!!
-    }
+    fun getInterpreter(): Interpreter? {
+        if (interpreter == null) {
+            //interpreter?.close()
+            interpreter = createInterpreter()
 
-    fun getTrainerInterpreter(config: Config): Interpreter {
-
-        if (interpreter == null || config.batchSize != lastBatchSize) {
-            interpreter?.close()
-
-            interpreter = createInterpreter(config.batchSize)
         }
-        return interpreter!!
+        return interpreter
     }
 
-    private fun createInterpreter(batchSize: Int): Interpreter? {
+
+    private fun createInterpreter(): Interpreter? {
         val options = Interpreter.Options().apply {
             numThreads = numThreadsOp
             setUseXNNPACK(true)//testing
             delegate?.let { delegates.add(it) }
         }
-
         try {
             val model = getMappedModel()
             val interpreter = Interpreter(model, options)
 
-            interpreter.resizeInput(0, intArrayOf(batchSize, IMG_SIZE, IMG_SIZE, 1))
-            lastBatchSize = batchSize
+//            interpreter.resizeInput(0, intArrayOf(batchSize, IMG_SIZE, IMG_SIZE, 1))
+//            lastBatchSize = batchSize
             isModelInitialized = true
             return interpreter
 

@@ -19,7 +19,7 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <com.nex3z.fingerpaintview.FingerPaintView
-            android:id="@+id/fpv_inference_draw"
+            android:id="@+id/fpv_samples_draw"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="2"
@@ -56,33 +56,13 @@
 
 
     <TextView
-        android:id="@+id/tv_samples_lbl"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:text="@string/samples_lbl"
-        android:textSize="16sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/top_layout" />
-
-    <TextView
-        android:id="@+id/tv_samples_numb_lbl"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:textSize="16sp"
-        app:layout_constraintStart_toEndOf="@id/tv_samples_lbl"
-        app:layout_constraintTop_toBottomOf="@id/top_layout" />
-
-
-    <TextView
         android:id="@+id/tv_loaded_samples_lbl"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="12dp"
         android:text="@string/loaded_samples_lbl"
         android:textSize="16sp"
-        app:layout_constraintStart_toEndOf="@id/tv_samples_numb_lbl"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/top_layout" />
 
     <TextView
@@ -93,6 +73,37 @@
         android:textSize="16sp"
         app:layout_constraintStart_toEndOf="@id/tv_loaded_samples_lbl"
         app:layout_constraintTop_toBottomOf="@id/top_layout" />
+
+
+    <ProgressBar
+        android:id="@+id/loading_progress_bar"
+        style="@style/Widget.AppCompat.ProgressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/top_layout" />
+
+    <TextView
+        android:id="@+id/tv_error_msg"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="22dp"
+        android:textColor="#E63F3F"
+        app:layout_constraintEnd_toStartOf="@id/loading_progress_bar"
+        app:layout_constraintTop_toBottomOf="@id/top_layout" />
+
+    <TextView
+        android:id="@+id/tv_info_msg"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="22dp"
+        android:textColor="#3EBF4B"
+        app:layout_constraintEnd_toStartOf="@id/loading_progress_bar"
+        app:layout_constraintTop_toBottomOf="@id/top_layout" />
+
+
     <TextView
         android:id="@+id/tv_training_btn_lbl"
         android:layout_width="wrap_content"
@@ -102,7 +113,7 @@
         android:textAlignment="center"
         android:textSize="20sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_samples_lbl" />
+        app:layout_constraintTop_toBottomOf="@id/tv_loaded_samples_lbl" />
 
 
     <androidx.appcompat.widget.SwitchCompat
@@ -112,8 +123,66 @@
         android:layout_margin="12dp"
         android:thumb="@drawable/switch_train"
         app:layout_constraintStart_toEndOf="@id/tv_training_btn_lbl"
-        app:layout_constraintTop_toBottomOf="@id/tv_samples_lbl"/>
+        app:layout_constraintTop_toBottomOf="@id/tv_loaded_samples_lbl" />
 
+    <LinearLayout
+        android:id="@+id/info_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_training">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            android:text="@string/loss" />
+
+        <TextView
+            android:id="@+id/tv_loss_out"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            android:text="@string/_0_00"  />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            android:text="@string/accuracy" />
+
+        <TextView
+            android:id="@+id/tv_acc_out"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            android:text="@string/_0_00"  />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/val_acc_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/info_layout">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            android:text="@string/validation_accuracy" />
+
+        <TextView
+            android:id="@+id/tv_val_acc_out"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            android:text="@string/_0_00" />
+
+    </LinearLayout>
 
     <TextView
         android:id="@+id/tv_threads_lbl"
@@ -123,7 +192,7 @@
         android:text="@string/threads_lbl"
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_training_btn_lbl" />
+        app:layout_constraintTop_toBottomOf="@id/val_acc_layout" />
 
     <TextView
         android:id="@+id/tv_threads_numb_lbl"
@@ -132,7 +201,7 @@
         android:layout_margin="12dp"
         android:textSize="16sp"
         app:layout_constraintStart_toEndOf="@id/tv_threads_lbl"
-        app:layout_constraintTop_toBottomOf="@id/tv_training_btn_lbl" />
+        app:layout_constraintTop_toBottomOf="@id/val_acc_layout" />
 
     <TextView
         android:id="@+id/tv_threads_min_value"

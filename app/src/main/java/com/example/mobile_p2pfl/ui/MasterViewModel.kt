@@ -59,6 +59,7 @@ class MasterViewModel : ViewModel() {
         Log.v("MODEL CONTROLLER", "Model controller initialized numthreads: $numThreads")
     }
 
+
     /*************************************************************************************/
     override fun onCleared() {
         super.onCleared()

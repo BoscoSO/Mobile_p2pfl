@@ -1,6 +1,8 @@
 package com.example.mobile_p2pfl.common
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.util.Log
 import com.example.mobile_p2pfl.ai.controller.LearningModel
 import com.example.mobile_p2pfl.common.Constants.MODEL_FILE_NAME
@@ -8,6 +10,7 @@ import com.example.mobile_p2pfl.protocol.comms.ClientGRPC
 
 import com.example.mobile_p2pfl.ui.fragments.inference.InferenceFragment
 import com.example.mobile_p2pfl.ui.fragments.training.TrainingFragment
+import org.tensorflow.lite.support.image.TensorImage
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -51,12 +54,20 @@ data class TrainingSample(val image: ByteArray, val label: Int) : Serializable{
         buffer.rewind()
         return buffer
     }
+    fun toTensorImage(): TensorImage {
+        val bitmap = BitmapFactory.decodeByteArray(image, 0, image.size)
+        return TensorImage.fromBitmap(bitmap)
+    }
+
     companion object {
         fun fromByteBuffer(buffer: ByteBuffer, label: Int): TrainingSample {
             buffer.rewind()
             val byteArray = ByteArray(buffer.remaining())
             buffer.get(byteArray)
             return TrainingSample(byteArray, label)
+        }
+        fun fromTensorImage(tensorImage: TensorImage, label: Int): TrainingSample {
+            return fromByteBuffer(tensorImage.buffer, label)
         }
     }
 
@@ -118,4 +129,13 @@ fun saveModelToInternalStorage(context: Context): String? {
     }
 
     return outFile.absolutePath
+}
+
+
+
+interface LearningModelEventListener {
+    fun updateProgress(loss: Float, accuracy: Float, validationAcc: Float)
+    fun onLoadingStarted()
+    fun onLoadingFinished()
+    fun onError(message: String)
 }
