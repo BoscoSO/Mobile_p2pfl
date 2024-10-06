@@ -29,7 +29,7 @@ class SamplesProcessor {
         if (!directory.exists()) {
             directory.mkdirs()
         }
-        val file = File(directory, "samples_x.dat")
+        val file = File(directory, "samples_x3.dat")
 
         val allSamples = mutableListOf<TrainingSample>()
 
@@ -58,6 +58,32 @@ class SamplesProcessor {
             Log.e("SamplesProcessor", "Error al guardar muestras", e)
         }
     }
+    fun loadSamplesFromInternalStorage(context: Context, title: String) {
+        val directory = File(context.filesDir, "saved_samples")
+        val file = File(directory, title)
+        val samples = mutableListOf<TrainingSample>()
+
+        if (file.exists()) {
+            try {
+                ObjectInputStream(FileInputStream(file)).use { ois ->
+                    @Suppress("UNCHECKED_CAST")
+                    val loadedSamples = ois.readObject() as? List<TrainingSample>
+                    if (loadedSamples != null) {
+                        samples.addAll(loadedSamples)
+                    }
+                }
+                Log.d("SamplesProcessor", "Muestras cargadas correctamente")
+            } catch (e: Exception) {
+                Log.e("SamplesProcessor", "Error al cargar muestras", e)
+                e.printStackTrace()
+            }
+        } else {
+            Log.d("SamplesProcessor", "No se encontró el archivo de muestras")
+        }
+
+        this.samples.addAll(samples)
+    }
+
 
     /*********************************PROCESS IMAGE************************************************/
     private val imageProcessor = ImageProcessor.Builder()

@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.fragment.app.Fragment
@@ -19,6 +20,7 @@ import com.example.mobile_p2pfl.common.Values.TRAINER_FRAG_LOG_TAG
 import com.example.mobile_p2pfl.databinding.FragmentTrainingBinding
 import com.example.mobile_p2pfl.ui.ConnectionState
 import com.example.mobile_p2pfl.ui.MasterViewModel
+import java.io.File
 
 class TrainingFragment : Fragment() {
 
@@ -32,7 +34,7 @@ class TrainingFragment : Fragment() {
 
     private val eventListener = object : LearningModelEventListener {
         override fun updateProgress(loss: Float, accuracy: Float, validationAcc: Float) {
-            trainingViewModel.udateProgress(loss,accuracy,validationAcc)
+            trainingViewModel.udateProgress(loss, accuracy, validationAcc)
         }
 
         override fun onLoadingStarted() {
@@ -43,6 +45,7 @@ class TrainingFragment : Fragment() {
         override fun onLoadingFinished() {
             trainingViewModel.setInfo("Done")
             trainingViewModel.stopLoading()
+            updateSavedSamples()
         }
 
         override fun onError(message: String) {
@@ -68,10 +71,27 @@ class TrainingFragment : Fragment() {
 
         initView()
         setupTrainer()
+        updateSavedSamples()
+
 
         return root
     }
 
+    private fun updateSavedSamples() {
+        val directory = File(binding.root.context.filesDir, "saved_samples")
+
+        val fileNames =
+            if (directory.exists() && directory.isDirectory) {
+                directory.listFiles()?.filter { it.isFile }?.map { it.name } ?: emptyList()
+            } else {
+                emptyList()
+            }
+
+
+        val adapter =
+            ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, fileNames)
+        binding.sampleReloadSelector.adapter = adapter
+    }
 
     private fun setupTrainer() {
         if (masterViewModel._isTraining.value == true) {
@@ -80,19 +100,6 @@ class TrainingFragment : Fragment() {
                 R.string.exception_training_in_progress,
                 Toast.LENGTH_LONG
             ).show()
-        } else {
-//            if (trainingViewModel._oldTrainningSamples.value!!.isNotEmpty()) {
-//                trainingViewModel._trainningSamples.value =
-//                    trainingViewModel._trainningSamples.value?.plus(
-//                        trainingViewModel._oldTrainningSamples.value!!
-//                    )
-//                trainingViewModel._oldTrainningSamples.value = emptyList()
-//                loadNewSamples()
-//                Log.v(
-//                    TRAINER_FRAG_LOG_TAG,
-//                    "loading old samples..." + trainingViewModel._trainningSamples.value!!.size
-//                )
-//            }
         }
     }
 
@@ -131,17 +138,15 @@ class TrainingFragment : Fragment() {
         trainingViewModel.loading.observe(viewLifecycleOwner) { isLoading ->
             if (isLoading)
                 binding.loadingProgressBar.visibility = View.VISIBLE
-            else{
+            else {
                 binding.loadingProgressBar.visibility = View.INVISIBLE
                 binding.btnTraining.isChecked = false
                 masterViewModel._isTraining.value = false
-//                masterViewModel.modelController.saveModel() //todo
             }
         }
         trainingViewModel.numThreads.observe(viewLifecycleOwner) { numThreads ->
             if (masterViewModel._isTraining.value == false) {
                 masterViewModel.setNumThreads(numThreads)
-                setupTrainer()
             }
         }
         trainingViewModel.loadedSamples.observe(viewLifecycleOwner) { samples ->
@@ -163,10 +168,8 @@ class TrainingFragment : Fragment() {
                 trainingViewModel._numThreads.value = seekBar!!.progress + 1
             }
         })
-        binding.btnAddSample.setOnClickListener {
-            //MnistLoader().resavesamples(binding.root.context)
-            //masterViewModel.modelController.startTraining2(masterViewModel.grpcClient)
 
+        binding.btnAddSample.setOnClickListener {
             addSampleClickListener()
         }
         binding.btnClearSample.setOnClickListener {
@@ -175,14 +178,20 @@ class TrainingFragment : Fragment() {
         binding.btnTraining.setOnClickListener {
             onTrainingClick()
         }
+
+        binding.sampleReload.setOnClickListener{
+            val strTitle = binding.sampleReloadSelector.selectedItem.toString()
+            masterViewModel.modelController.loadSavedSamples(strTitle)
+            trainingViewModel._loadedSamples.value = masterViewModel.modelController.getSamplesSize()
+        }
     }
 
     private fun onTrainingClick() {
         if (binding.btnTraining.isChecked) {
             if (checkModelAndSamples()) {
-                try{
+                try {
                     masterViewModel.modelController.startTraining()
-                }catch (e:Exception){
+                } catch (e: Exception) {
                     Log.v(TRAINER_FRAG_LOG_TAG, "Training couldn't start")
                 }
                 masterViewModel._isTraining.value = true

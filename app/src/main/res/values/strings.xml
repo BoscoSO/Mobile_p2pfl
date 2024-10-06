@@ -51,5 +51,7 @@
     <string name="validation_accuracy">Validation accuracy:</string>
     <string name="_0_00">0.00</string>
     <string name="detect_icn_dscr">Classifies the image given in the drawing</string>
+    <string name="saved_samples">Auto Saved Samples:</string>
+    <string name="reload_samples">Carga los datos del archivo guardado para usar con el modelo</string>
 
 </resources>

@@ -14,27 +14,10 @@ class TrainingViewModel() : ViewModel() {
     val numThreads: LiveData<Int> = _numThreads
 
 
-//    // list of training samples
-//    val _trainningSamples = MutableLiveData<List<TrainingSample>>().apply {
-//        value = emptyList<TrainingSample>()
-//    }
-//    val trainningSamples: LiveData<List<TrainingSample>> = _trainningSamples
-
     val _loadedSamples = MutableLiveData<Int>().apply {
         value = 0
     }
     val loadedSamples: LiveData<Int> = _loadedSamples
-
-
-    // list of old training samples for new interpreters build
-//    val _oldTrainningSamples = MutableLiveData<List<TrainingSample>>().apply {
-//        value = emptyList<TrainingSample>()
-//    }
-
-
-    // Training sample class
-//    data class TrainingSample(val image: Bitmap, val label: Int)
-
 
     /*********************************************/
 

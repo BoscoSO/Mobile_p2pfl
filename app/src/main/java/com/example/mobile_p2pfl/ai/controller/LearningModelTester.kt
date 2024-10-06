@@ -2,7 +2,10 @@ package com.example.mobile_p2pfl.ai.controller
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
+import androidx.test.internal.runner.junit4.statement.UiThreadStatement.runOnUiThread
 import com.example.mobile_p2pfl.ai.LearningModelController
 import com.example.mobile_p2pfl.ai.conversor.SamplesProcessor
 import com.example.mobile_p2pfl.ai.model.InterpreterProvider
@@ -71,6 +74,10 @@ class LearningModelTester(
         Log.d(MODEL_LOG_TAG, "Setting number of threads to $numThreads")
         interpreterProvider.setNumberOfThreads(numThreads)
         restoreModel()
+    }
+
+    fun loadSavedSamples(title: String) {
+        samplesProcessor.loadSamplesFromInternalStorage(context, title)
     }
 
     /***************OVERRIDE*****************/
@@ -196,12 +203,16 @@ class LearningModelTester(
 
                     numEpochs++
 
-                    eventListener?.updateProgress(avgLoss, avgAccuracy, avgValidationAcc)
-
                     Log.d(
                         MODEL_LOG_TAG,
                         "Epoch: $numEpochs: Accuracy $avgAccuracy/1  || Loss $avgLoss || Validation Acc $avgValidationAcc/1"
                     )
+                    if (shouldStopTraining(avgLoss)) {
+                        Log.d(MODEL_LOG_TAG, "Early stopping triggered. Training stopped.")
+                        pauseTraining()
+                    } else
+                        eventListener?.updateProgress(avgLoss, avgAccuracy, avgValidationAcc)
+
                 }
             }
         }
@@ -253,11 +264,6 @@ class LearningModelTester(
         }
         val loss = outputLossBuffer.floatArray[0]
         val accuracy = outputAccuracyBuffer.floatArray[0]
-
-        if (shouldStopTraining(loss)) {
-            Log.d(MODEL_LOG_TAG, "Early stopping triggered. Training stopped.")
-            pauseTraining()
-        }
 
         return loss to accuracy
     }
@@ -366,18 +372,29 @@ class LearningModelTester(
         patienceCounter = 0
         bestLoss = Float.MAX_VALUE
         executor?.let { executorService ->
-            executorService.shutdownNow()
-            try {
-                if (!executorService.awaitTermination(8, TimeUnit.SECONDS)) {
-                    Log.e(MODEL_LOG_TAG, "ExecutorService did not terminate in the specified time.")
+            Thread {
+                try {
+                    if (!executorService.awaitTermination(14, TimeUnit.SECONDS)) {
+                        Log.e(
+                            MODEL_LOG_TAG,
+                            "ExecutorService did not terminate in the specified time."
+                        )
+                        executorService.shutdownNow()
+                    }
+                } catch (e: InterruptedException) {
+                    Log.e(MODEL_LOG_TAG, "Shutdown process was interrupted", e)
+                    executorService.shutdownNow()
+                    Thread.currentThread().interrupt()
+                } finally {
+                    Handler(Looper.getMainLooper()).post {
+                        Log.d(MODEL_LOG_TAG, "Training paused")
+                        eventListener?.onLoadingFinished()
+                        saveModel()
+                        //samplesProcessor.saveSamplesToInternalStorage(context) // saving
+                        //samplesProcessor.clearSamples()
+                    }
                 }
-            } catch (e: InterruptedException) {
-                Thread.currentThread().interrupt()
-            } finally {
-                Log.d(MODEL_LOG_TAG, "Training paused")
-                eventListener?.onLoadingFinished()
-                saveModel()
-            }
+            }.start()
         }
     }
 

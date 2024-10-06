@@ -1,234 +1,274 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingStart="12dp"
-    android:paddingEnd="12dp"
-    tools:context=".ui.fragments.training.TrainingFragment">
+    android:layout_marginBottom="60dp">
 
-    <LinearLayout
-        android:id="@+id/top_layout"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="horizontal"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="12dp"
+        android:padding="12dp"
+        tools:context=".ui.fragments.training.TrainingFragment">
 
-        <com.nex3z.fingerpaintview.FingerPaintView
-            android:id="@+id/fpv_samples_draw"
+        <LinearLayout
+            android:id="@+id/top_layout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="2"
-            android:foreground="@drawable/shape_rect_border" />
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
 
-        <NumberPicker
-            android:id="@+id/np_number"
+            <com.nex3z.fingerpaintview.FingerPaintView
+                android:id="@+id/fpv_samples_draw"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="2"
+                android:foreground="@drawable/shape_rect_border" />
+
+            <NumberPicker
+                android:id="@+id/np_number"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="0" />
+        </LinearLayout>
+
+
+        <ImageButton
+            android:id="@+id/btn_add_sample"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:layout_weight="0" />
-    </LinearLayout>
+            android:backgroundTint="@color/inv"
+            android:contentDescription="@string/add_sample_description"
+            android:src="@drawable/ic_add_sample_button"
+            app:layout_constraintBottom_toBottomOf="@id/top_layout"
+            app:layout_constraintStart_toStartOf="@id/top_layout" />
 
+        <ImageButton
+            android:id="@+id/btn_clear_sample"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/inv"
+            android:contentDescription="@string/clear_sample_description"
+            android:src="@drawable/ic_clear_board_24"
+            app:layout_constraintBottom_toBottomOf="@id/top_layout"
+            app:layout_constraintStart_toEndOf="@id/btn_add_sample" />
 
-    <ImageButton
-        android:id="@+id/btn_add_sample"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:backgroundTint="@color/inv"
-        android:contentDescription="@string/add_sample_description"
-        android:src="@drawable/ic_add_sample_button"
-        app:layout_constraintBottom_toBottomOf="@id/top_layout"
-        app:layout_constraintStart_toStartOf="@id/top_layout" />
-
-    <ImageButton
-        android:id="@+id/btn_clear_sample"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:backgroundTint="@color/inv"
-        android:contentDescription="@string/clear_sample_description"
-        android:src="@drawable/ic_clear_board_24"
-        app:layout_constraintBottom_toBottomOf="@id/top_layout"
-        app:layout_constraintStart_toEndOf="@id/btn_add_sample" />
-
-
-    <TextView
-        android:id="@+id/tv_loaded_samples_lbl"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:text="@string/loaded_samples_lbl"
-        android:textSize="16sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/top_layout" />
-
-    <TextView
-        android:id="@+id/tv_loaded_samples_numb_lbl"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:textSize="16sp"
-        app:layout_constraintStart_toEndOf="@id/tv_loaded_samples_lbl"
-        app:layout_constraintTop_toBottomOf="@id/top_layout" />
-
-
-    <ProgressBar
-        android:id="@+id/loading_progress_bar"
-        style="@style/Widget.AppCompat.ProgressBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="8dp"
-        android:visibility="invisible"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/top_layout" />
-
-    <TextView
-        android:id="@+id/tv_error_msg"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="22dp"
-        android:textColor="#E63F3F"
-        app:layout_constraintEnd_toStartOf="@id/loading_progress_bar"
-        app:layout_constraintTop_toBottomOf="@id/top_layout" />
-
-    <TextView
-        android:id="@+id/tv_info_msg"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="22dp"
-        android:textColor="#3EBF4B"
-        app:layout_constraintEnd_toStartOf="@id/loading_progress_bar"
-        app:layout_constraintTop_toBottomOf="@id/top_layout" />
-
-
-    <TextView
-        android:id="@+id/tv_training_btn_lbl"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="22dp"
-        android:text="@string/btn_training"
-        android:textAlignment="center"
-        android:textSize="20sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_loaded_samples_lbl" />
-
-
-    <androidx.appcompat.widget.SwitchCompat
-        android:id="@+id/btn_training"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:thumb="@drawable/switch_train"
-        app:layout_constraintStart_toEndOf="@id/tv_training_btn_lbl"
-        app:layout_constraintTop_toBottomOf="@id/tv_loaded_samples_lbl" />
-
-    <LinearLayout
-        android:id="@+id/info_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btn_training">
 
         <TextView
+            android:id="@+id/tv_loaded_samples_lbl"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="12dp"
-            android:text="@string/loss" />
+            android:text="@string/loaded_samples_lbl"
+            android:textSize="16sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/top_layout" />
 
         <TextView
-            android:id="@+id/tv_loss_out"
+            android:id="@+id/tv_loaded_samples_numb_lbl"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="12dp"
-            android:text="@string/_0_00"  />
+            android:textSize="16sp"
+            app:layout_constraintStart_toEndOf="@id/tv_loaded_samples_lbl"
+            app:layout_constraintTop_toBottomOf="@id/top_layout" />
+
+
+        <ProgressBar
+            android:id="@+id/loading_progress_bar"
+            style="@style/Widget.AppCompat.ProgressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:visibility="invisible"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/top_layout" />
 
         <TextView
+            android:id="@+id/tv_error_msg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="22dp"
+            android:textColor="#E63F3F"
+            app:layout_constraintEnd_toStartOf="@id/loading_progress_bar"
+            app:layout_constraintTop_toBottomOf="@id/top_layout" />
+
+        <TextView
+            android:id="@+id/tv_info_msg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="22dp"
+            android:textColor="#3EBF4B"
+            app:layout_constraintEnd_toStartOf="@id/loading_progress_bar"
+            app:layout_constraintTop_toBottomOf="@id/top_layout" />
+
+
+        <TextView
+            android:id="@+id/tv_training_btn_lbl"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="22dp"
+            android:text="@string/btn_training"
+            android:textAlignment="center"
+            android:textSize="20sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_loaded_samples_lbl" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/btn_training"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="12dp"
-            android:text="@string/accuracy" />
+            android:thumb="@drawable/switch_train"
+            app:layout_constraintStart_toEndOf="@id/tv_training_btn_lbl"
+            app:layout_constraintTop_toBottomOf="@id/tv_loaded_samples_lbl" />
+
+        <LinearLayout
+            android:id="@+id/info_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/btn_training">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp"
+                android:text="@string/loss" />
+
+            <TextView
+                android:id="@+id/tv_loss_out"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp"
+                android:text="@string/_0_00" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp"
+                android:text="@string/accuracy" />
+
+            <TextView
+                android:id="@+id/tv_acc_out"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp"
+                android:text="@string/_0_00" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/val_acc_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/info_layout">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp"
+                android:text="@string/validation_accuracy" />
+
+            <TextView
+                android:id="@+id/tv_val_acc_out"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp"
+                android:text="@string/_0_00" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ly_samples_reload"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="12dp"
+            android:orientation="horizontal"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/val_acc_layout">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/saved_samples" />
+
+            <Spinner
+                android:id="@+id/sample_reload_selector"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+            <ImageButton
+                android:id="@+id/sample_reload"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/inv"
+                android:contentDescription="@string/reload_samples"
+                android:src="@drawable/icn_download"
+
+                />
+
+        </LinearLayout>
 
         <TextView
-            android:id="@+id/tv_acc_out"
+            android:id="@+id/tv_threads_lbl"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="12dp"
-            android:text="@string/_0_00"  />
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/val_acc_layout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/info_layout">
+            android:text="@string/threads_lbl"
+            android:textSize="16sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/ly_samples_reload" />
 
         <TextView
+            android:id="@+id/tv_threads_numb_lbl"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="12dp"
-            android:text="@string/validation_accuracy" />
+            android:textSize="16sp"
+            app:layout_constraintStart_toEndOf="@id/tv_threads_lbl"
+            app:layout_constraintTop_toBottomOf="@id/ly_samples_reload" />
 
         <TextView
-            android:id="@+id/tv_val_acc_out"
+            android:id="@+id/tv_threads_min_value"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="12dp"
-            android:text="@string/_0_00" />
+            android:text="@string/threads_min_value"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_threads_lbl" />
 
-    </LinearLayout>
+        <SeekBar
+            android:id="@+id/sb_threads_selector"
+            style="@style/Widget.AppCompat.SeekBar.Discrete"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            android:max="5"
+            app:layout_constraintEnd_toStartOf="@id/tv_threads_max_value"
+            app:layout_constraintStart_toEndOf="@id/tv_threads_min_value"
+            app:layout_constraintTop_toBottomOf="@id/tv_threads_lbl" />
 
-    <TextView
-        android:id="@+id/tv_threads_lbl"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:text="@string/threads_lbl"
-        android:textSize="16sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/val_acc_layout" />
+        <TextView
+            android:id="@+id/tv_threads_max_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            android:text="@string/threads_max_value"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_threads_lbl" />
 
-    <TextView
-        android:id="@+id/tv_threads_numb_lbl"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:textSize="16sp"
-        app:layout_constraintStart_toEndOf="@id/tv_threads_lbl"
-        app:layout_constraintTop_toBottomOf="@id/val_acc_layout" />
-
-    <TextView
-        android:id="@+id/tv_threads_min_value"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:text="@string/threads_min_value"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_threads_lbl" />
-
-    <SeekBar
-        android:id="@+id/sb_threads_selector"
-        style="@style/Widget.AppCompat.SeekBar.Discrete"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:max="5"
-        app:layout_constraintEnd_toStartOf="@id/tv_threads_max_value"
-        app:layout_constraintStart_toEndOf="@id/tv_threads_min_value"
-        app:layout_constraintTop_toBottomOf="@id/tv_threads_lbl" />
-
-    <TextView
-        android:id="@+id/tv_threads_max_value"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:text="@string/threads_max_value"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_threads_lbl" />
-</androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>
