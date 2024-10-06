@@ -123,6 +123,7 @@ dependencies {
     implementation(libs.grpc.stub)
     implementation(libs.annotation.javax.annotation.api)
     implementation(libs.protobuf.javalite)
+    //implementation("com.google.protobuf:protobuf-kotlin:4.27.4")
 
    // implementation(libs.protobuf.java)
     implementation(libs.grpc.android)

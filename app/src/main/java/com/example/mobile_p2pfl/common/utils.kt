@@ -139,3 +139,11 @@ interface LearningModelEventListener {
     fun onLoadingFinished()
     fun onError(message: String)
 }
+
+
+
+interface GrpcEventListener {
+    fun onLoadingStarted()
+    fun onLoadingFinished()
+    fun onError(message: String)
+}

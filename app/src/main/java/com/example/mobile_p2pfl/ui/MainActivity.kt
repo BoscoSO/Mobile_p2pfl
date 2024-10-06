@@ -11,6 +11,7 @@ import androidx.navigation.ui.setupWithNavController
 import com.example.mobile_p2pfl.R
 import com.example.mobile_p2pfl.common.Device
 import com.example.mobile_p2pfl.databinding.ActivityMainBinding
+import com.example.mobile_p2pfl.ui.fragments.connection.ConnectionViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
@@ -47,9 +48,16 @@ class MainActivity : AppCompatActivity() {
 
 
         masterViewModel = ViewModelProvider(this)[MasterViewModel::class.java]
-        masterViewModel.initializeConnection()
+
+        masterViewModel.initializeConnection(this)//, ViewModelProvider(this)[ConnectionViewModel::class.java])
 
         masterViewModel.initializeModelController(binding.root.context,2, Device.CPU)
 
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        Log.d("MainActivity", "onDestroy se ha ejecutado")
     }
 }
