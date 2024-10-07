@@ -12,7 +12,6 @@ import org.tensorflow.lite.nnapi.NnApiDelegate
 import java.io.Closeable
 import java.io.File
 import java.io.FileInputStream
-import java.nio.ByteBuffer
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 

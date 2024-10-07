@@ -90,7 +90,7 @@ class MasterViewModel : ViewModel() {
     val isTraining: LiveData<Boolean> = _isTraining
 
 
-    fun initializeModelController(context: Context, numThreads: Int, device: Device = Device.CPU) {
+    fun initializeModelController(context: Context, numThreads: Int) {
         modelController = LearningModel(context) //, Device.CPU
         modelController.setNumThreads(numThreads)
         Log.v("MODEL CONTROLLER", "Model controller initialized numthreads: $numThreads")

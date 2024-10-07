@@ -92,10 +92,10 @@ class SamplesProcessor {
     fun clearSamples() {
         samples.clear()
     }
-    fun getSamples(): List<TrainingSample> = samples
+    //fun getSamples(): List<TrainingSample> = samples
 
     fun samplesSize(): Int = samples.size
-    fun isSamplesEmpty(): Boolean = samples.isEmpty()
+
 
 
     /******************************AUGMENTATION************************************************/

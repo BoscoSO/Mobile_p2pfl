@@ -1,6 +1,5 @@
 package com.example.mobile_p2pfl.ui.fragments.training
 
-import android.graphics.Bitmap
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -21,9 +20,6 @@ class TrainingViewModel() : ViewModel() {
 
     /*********************************************/
 
-    val _fileName = MutableLiveData<String>().apply {
-        value = ""
-    }
     val _saveSamples = MutableLiveData<Boolean>().apply {
         value = false
     }

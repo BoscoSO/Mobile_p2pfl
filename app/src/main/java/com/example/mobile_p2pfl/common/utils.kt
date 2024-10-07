@@ -1,25 +1,13 @@
 package com.example.mobile_p2pfl.common
 
-import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.util.Log
 import com.example.mobile_p2pfl.ai.controller.LearningModel
-import com.example.mobile_p2pfl.common.Constants.MODEL_FILE_NAME
 import com.example.mobile_p2pfl.protocol.comms.ClientGRPC
-
 import com.example.mobile_p2pfl.ui.fragments.inference.InferenceFragment
 import com.example.mobile_p2pfl.ui.fragments.training.TrainingFragment
 import org.tensorflow.lite.support.image.TensorImage
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.IOException
-import java.io.InputStream
 import java.io.Serializable
 import java.nio.ByteBuffer
-import java.nio.MappedByteBuffer
-import java.nio.channels.FileChannel
 
 
 object Constants {
