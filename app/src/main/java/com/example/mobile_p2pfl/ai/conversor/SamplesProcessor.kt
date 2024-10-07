@@ -24,34 +24,16 @@ import java.nio.ByteOrder
 class SamplesProcessor {
     private val samples = mutableListOf<TrainingSample>()
 
-    fun saveSamplesToInternalStorage(context: Context) {
+    fun saveSamplesToInternalStorage(context: Context, title: String) {
         val directory = File(context.filesDir, "saved_samples")
         if (!directory.exists()) {
             directory.mkdirs()
         }
-        val file = File(directory, "samples_x3.dat")
-
-        val allSamples = mutableListOf<TrainingSample>()
-
-        if (file.exists()) {
-            try {
-                ObjectInputStream(FileInputStream(file)).use { ois ->
-                    @Suppress("UNCHECKED_CAST")
-                    val existingSamples = ois.readObject() as? List<TrainingSample>
-                    if (existingSamples != null) {
-                        allSamples.addAll(existingSamples)
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-
-        allSamples.addAll(samples)
+        val file = File(directory, "$title.dat")
 
         try {
             ObjectOutputStream(FileOutputStream(file)).use { oos ->
-                oos.writeObject(allSamples)
+                oos.writeObject(samples)
             }
             Log.d("SamplesProcessor", "Muestras guardadas correctamente")
         } catch (e: IOException) {

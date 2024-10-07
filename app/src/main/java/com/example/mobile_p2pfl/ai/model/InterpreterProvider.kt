@@ -83,9 +83,12 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
         return isModelInitialized
     }
 
-    fun setNumberOfThreads(numThreads: Int) {
+    fun setNumberOfThreads(numThreads: Int): Boolean {
+        if(numThreads == numThreadsOp && interpreter != null)
+            return false
         numThreadsOp = numThreads
         interpreter = createInterpreter()
+        return isModelInitialized
     }
 
     fun getInterpreter(): Interpreter? {

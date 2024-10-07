@@ -2,119 +2,99 @@ package com.example.mobile_p2pfl.ai.controller
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.example.mobile_p2pfl.ai.LearningModelController
+import com.example.mobile_p2pfl.ai.conversor.SamplesProcessor
+import com.example.mobile_p2pfl.ai.model.InterpreterProvider
 import com.example.mobile_p2pfl.common.Constants.CHECKPOINT_FILE_NAME
 import com.example.mobile_p2pfl.common.Device
+import com.example.mobile_p2pfl.common.LearningModelEventListener
 import com.example.mobile_p2pfl.common.Recognition
 import com.example.mobile_p2pfl.common.TrainingSample
 import com.example.mobile_p2pfl.common.Values.MODEL_LOG_TAG
-import com.example.mobile_p2pfl.common.getMappedModel
-import org.tensorflow.lite.Delegate
+import org.tensorflow.lite.DataType
 import org.tensorflow.lite.Interpreter
-import org.tensorflow.lite.gpu.GpuDelegate
-import org.tensorflow.lite.nnapi.NnApiDelegate
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
-import java.io.Closeable
 import java.io.File
-import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.FloatBuffer
+import java.nio.IntBuffer
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import kotlin.math.max
-import kotlin.math.min
+import java.util.concurrent.TimeUnit
 import kotlin.system.measureTimeMillis
 
 
 class LearningModel(
     private val context: Context,
-    private var numThreads: Int = 4,
     device: Device = Device.CPU
 ) : LearningModelController {
 
 
     /*****************VARIABLES*********************/
 
-    // LearningModel TFLite interpreter
-    private var interpreter: Interpreter? = null
+    private val interpreterProvider = InterpreterProvider(context)
+    private val samplesProcessor = SamplesProcessor()
 
-    // Executor for running inference
+    private var eventListener: LearningModelEventListener? = null
+
     private var executor: ExecutorService? = null
-
-    // List of training samples
-    private val trainingSamples = mutableListOf<TrainingSample>()
-
-    // Delegate for GPU acceleration
-    private val delegate: Delegate? = when (device) {
-        Device.CPU -> null
-        Device.NNAPI -> NnApiDelegate()
-        Device.GPU -> GpuDelegate()
-    }
-
-    // Lock for thread-safety
     private val lock = Any()
-
-
-    fun isModelInitialized(): Boolean {
-        return interpreter != null
-    }
 
     /*****************SETUP*********************/
 
-    // Initialize LearningModel TFLite interpreter.
     init {
-        if (!initModelInterpreter()) {
-            Log.e(MODEL_LOG_TAG, "TFLite failed to init.")
-        } else
+        if (!isModelInitialized()) {
+            eventListener?.onError("TFLite failed to init.")
+        } else {
             restoreModel()
-    }
-
-    // Initialize the TFLite interpreter.
-    private fun initModelInterpreter(): Boolean {
-        val options = Interpreter.Options()
-        options.numThreads = numThreads
-
-        delegate?.let { options.delegates.add(it) }
-
-        return try {
-            val modelFile = getMappedModel(context)
-            interpreter = Interpreter(modelFile, options)
-            true
-        } catch (e: IOException) {
-            Log.e(MODEL_LOG_TAG, "TFLite failed to load model with error: " + e.message)
-            false
         }
     }
-
 
     /***************OVERRIDE*****************/
 
     // Classify the input image
     override fun classify(image: Bitmap): Recognition {
+        val interpreter = interpreterProvider.getInterpreter()
+        if (!interpreterProvider.isModelInitialized()) {
+            throw IllegalStateException("Model is not initialized.")
+        }
         synchronized(lock) {
             try {
-                val inputImageBuffer = preprocessImage(image)
+                val inputImageBuffer = samplesProcessor.getProcessedImage(image)
                 val outputProbabilityBuffer =
                     TensorBuffer.createFixedSize(
                         intArrayOf(1, CLASSES),
-                        org.tensorflow.lite.DataType.FLOAT32
+                        DataType.FLOAT32
                     )
+                val outputLogitsBuffer = TensorBuffer.createFixedSize(
+                    intArrayOf(1, CLASSES),
+                    DataType.FLOAT32
+                )
 
                 val timeCost = measureTimeMillis {
                     val inputs = mapOf(
-                        "x" to inputImageBuffer
+                        "x" to inputImageBuffer.buffer
                     )
                     val outputs = mutableMapOf<String, Any>(
-                        "output" to outputProbabilityBuffer.buffer
+                        "output" to outputProbabilityBuffer.buffer,
+                        "logits" to outputLogitsBuffer.buffer
                     )
                     interpreter!!.runSignature(inputs, outputs, "infer")
                 }
+
+                val outputLogits = outputLogitsBuffer.floatArray
 
                 val outputArray = outputProbabilityBuffer.floatArray
                 val maxIdx = outputArray.indices.maxByOrNull { outputArray[it] } ?: -1
                 val confidence = outputArray[maxIdx]
 
+
+                Log.d("Inference", "Output probabilities: ${outputArray.contentToString()}")
+                Log.d("Inference", "Output logits: ${outputLogits.contentToString()}")
                 return Recognition(label = maxIdx, confidence = confidence, timeCost = timeCost)
             } finally {
 
@@ -124,176 +104,86 @@ class LearningModel(
 
     // Add a training sample to the list.
     override fun addTrainingSample(image: Bitmap, number: Int) {
-        val inputImageBuffer = preprocessImage(image)
-        val trainingSample = TrainingSample.fromByteBuffer(inputImageBuffer, number)
-        trainingSamples.add(trainingSample)
+        samplesProcessor.addSample(image, number)
+
     }
 
     // Get the number of training samples.
     override fun getSamplesSize(): Int {
-        return trainingSamples.size
+        return samplesProcessor.samplesSize()
     }
 
     // Start the training process.
-    // With one sample at a time
     override fun startTraining() {
-        if (interpreter == null) {
-            initModelInterpreter()
-        }
+        val interpreter = interpreterProvider.getInterpreter()
 
-        if (trainingSamples.isEmpty()) {
-            throw IllegalStateException("No training samples available.")
+        if (!interpreterProvider.isModelInitialized()) {
+            throw IllegalStateException("Model is not initialized.")
         }
 
         executor = Executors.newSingleThreadExecutor()
 
-        val trainBatchSize = min(max(1, trainingSamples.size), BATCH_SIZE)
+        val config = interpreterProvider.getOptimalConfigFor(samplesProcessor.samplesSize())
 
-        if (trainingSamples.size < trainBatchSize) {
+        if (samplesProcessor.samplesSize() < (config.batchSize * 1.2f).toInt()) {
             throw RuntimeException(
                 String.format(
                     "Too few samples to start training: need %d, got %d",
-                    trainBatchSize,
-                    trainingSamples.size
+                    config.batchSize,
+                    (samplesProcessor.samplesSize() * 1.2f).toInt()
                 )
             )
         }
+
+        eventListener?.onLoadingStarted()
+
         executor?.execute {
             synchronized(lock) {
-                var avgLoss: Float
-
-                // Keep training until the helper pause or close.
+                var numEpochs = 0
                 while (executor?.isShutdown == false) {
                     var totalLoss = 0f
+                    var totalAccuracy = 0f
+                    var totalValidationAccuracy = 0f
+
+
+                    /******************************TRAINING*********************************/
                     var numBatchesProcessed = 0
-
-                    trainingSamples.shuffle()
-
-                    trainingBatchesIterator(trainBatchSize).forEach { samples ->
-                        samples.forEach { sample ->
-                            val inputImageBuffer = sample.toByteBuffer()
-                            val labelBuffer = ByteBuffer.allocateDirect(4).apply {
-                                order(ByteOrder.nativeOrder())
-                                putInt(sample.label)
-                            }
-                            val outputLossBuffer = ByteBuffer.allocateDirect(4).apply {
-                                order(ByteOrder.nativeOrder())
-                            }
-
-                            val inputs = mapOf("x" to inputImageBuffer, "y" to labelBuffer)
-                            val outputs = mutableMapOf<String, Any>("loss" to outputLossBuffer)
-
-                            val timeCost = measureTimeMillis {
-                                interpreter!!.runSignature(inputs, outputs, "train")
-                            }
-
-                            outputLossBuffer.rewind()
-                            val loss = outputLossBuffer.float
-                            Log.d(
-                                MODEL_LOG_TAG,
-                                "Training Loss for sample: $loss, Time cost: $timeCost"
+                    samplesProcessor.trainingBatchesIterator(trainBatchSize = config.batchSize)
+                        .forEach { batch ->
+                            val (batchLoss, batchAccuracy) = processBatchTensors(
+                                interpreter!!,
+                                config,
+                                batch
                             )
-
-
-                            totalLoss += loss
+                            totalLoss += batchLoss
+                            totalAccuracy += batchAccuracy
                             numBatchesProcessed++
                         }
-                    }
-                    avgLoss = totalLoss / numBatchesProcessed
-                    Log.d(MODEL_LOG_TAG, "Average loss: $avgLoss")
+                    val avgLoss = totalLoss / numBatchesProcessed
+                    val avgAccuracy = totalAccuracy / numBatchesProcessed
 
-                }
-
-            }
-        }
-    }
-
-    // Start the training process.
-    // With all samples at once (does not work)
-    private fun startTraining2() {
-        if (interpreter == null) {
-            initModelInterpreter()
-        }
-
-        // New thread for training process.
-        executor = Executors.newSingleThreadExecutor()
-
-        val trainBatchSize = min(max(1, trainingSamples.size), BATCH_SIZE)
-
-        if (trainingSamples.size < trainBatchSize) {
-            throw RuntimeException(
-                String.format(
-                    "Too few samples to start training: need %d, got %d",
-                    trainBatchSize,
-                    trainingSamples.size
-                )
-            )
-        }
-
-
-        val inputTensor = interpreter!!.getInputTensor(0)
-        val inputShape = inputTensor.shape()
-        Log.d(MODEL_LOG_TAG, "Input shape: ${inputShape.contentToString()}")
-
-        executor?.execute {
-            synchronized(lock) {
-                var avgLoss: Float
-
-                // Keep training until the helper pause or close.
-                while (executor?.isShutdown == false) {
-                    var totalLoss = 0f
-                    var numBatchesProcessed = 0
-
-                    // Shuffle training samples to reduce overfitting and variance.
-                    trainingSamples.shuffle()
-
-                    trainingBatchesIterator(trainBatchSize).forEach { samples ->
-                        val batchSize = samples.size
-
-                        val inputImageBuffer =
-                            ByteBuffer.allocateDirect(batchSize * 4 * IMG_SIZE * IMG_SIZE).apply {
-                                order(ByteOrder.nativeOrder())
-                            }
-                        val labelBuffer = ByteBuffer.allocateDirect(batchSize * 4).apply {
-                            order(ByteOrder.nativeOrder())
+                    /******************************VALIDATION*********************************/
+                    var numSamplesProcessed = 0
+                    samplesProcessor.trainingBatchesIterator(validationSet = true)
+                        .forEach { batch ->
+                            val batchAccuracy = validateModel(interpreter!!, batch)
+                            totalValidationAccuracy += batchAccuracy
+                            numSamplesProcessed++
                         }
-                        val outputLossBuffer = ByteBuffer.allocateDirect(4).apply {
-                            order(ByteOrder.nativeOrder())
-                        }
+                    val avgValidationAcc = totalValidationAccuracy / numSamplesProcessed
 
 
-                        // Llenar los buffers con los datos del lote
-                        samples.forEach { sample ->
-                            inputImageBuffer.put(sample.toByteBuffer())
-                            labelBuffer.putInt(sample.label)
-                        }
+                    numEpochs++
 
-                        // Rebobinar los buffers para que estén listos para ser leídos
-                        inputImageBuffer.rewind()
-                        labelBuffer.rewind()
-
-                        val inputs = mapOf("x" to inputImageBuffer, "y" to labelBuffer)
-                        val outputs = mutableMapOf<String, Any>("loss" to outputLossBuffer)
-
-                        val timeCost = measureTimeMillis {
-                            interpreter!!.runSignature(inputs, outputs, "train")
-                        }
-
-                        outputLossBuffer.rewind()
-                        val loss = outputLossBuffer.float
-                        Log.d(
-                            MODEL_LOG_TAG,
-                            "Training Loss for batch: $loss, Time cost: $timeCost"
-                        )
-
-                        totalLoss += loss
-                        numBatchesProcessed++
-                    }
-
-                    // Calculate the average loss after training all batches.
-                    avgLoss = totalLoss / numBatchesProcessed
-                    Log.d(MODEL_LOG_TAG, "Average loss: $avgLoss")
-
+                    Log.d(
+                        MODEL_LOG_TAG,
+                        "Epoch: $numEpochs: Accuracy $avgAccuracy/1  || Loss $avgLoss || Validation Acc $avgValidationAcc/1"
+                    )
+                    if (shouldStopTraining(avgLoss)) {
+                        Log.d(MODEL_LOG_TAG, "Early stopping triggered. Training stopped.")
+                        pauseTraining()
+                    } else
+                        eventListener?.updateProgress(avgLoss, avgAccuracy, avgValidationAcc)
 
                 }
             }
@@ -302,23 +192,48 @@ class LearningModel(
 
     // Pause the training process.
     override fun pauseTraining() {
-        executor?.shutdownNow()
-        saveModel()
+        patienceCounter = 0
+        bestLoss = Float.MAX_VALUE
+        executor?.let { executorService ->
+            Thread {
+                try {
+                    if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                        Log.e(
+                            MODEL_LOG_TAG,
+                            "ExecutorService did not terminate in the specified time."
+                        )
+                        executorService.shutdownNow()
+                    }
+                } catch (e: InterruptedException) {
+                    Log.e(MODEL_LOG_TAG, "Shutdown process was interrupted", e)
+                    executorService.shutdownNow()
+                    Thread.currentThread().interrupt()
+                } finally {
+                    Handler(Looper.getMainLooper()).post {
+                        Log.d(MODEL_LOG_TAG, "Training paused")
+                        eventListener?.onLoadingFinished()
+                        saveModel()
+                    }
+                }
+            }.start()
+        }
     }
 
     // Save the model to the checkpoint
     override fun saveModel() {
+        val interpreter = interpreterProvider.getInterpreter()
         val outputFile = File(context.filesDir, CHECKPOINT_FILE_NAME)
         val inputs: MutableMap<String, Any> = HashMap()
         inputs["checkpoint_path"] = outputFile.absolutePath
         val outputs: Map<String, Any> = HashMap()
         interpreter!!.runSignature(inputs, outputs, "save")
         Log.d(MODEL_LOG_TAG, "Model saved")
-
+        restoreModel()
     }
 
     // Restore the model from the checkpoint
     override fun restoreModel() {
+        val interpreter = interpreterProvider.getInterpreter()
         val outputFile = File(context.filesDir, CHECKPOINT_FILE_NAME)
         if (outputFile.exists()) {
             val inputs: MutableMap<String, Any> = HashMap()
@@ -334,104 +249,205 @@ class LearningModel(
     // Close the TFLite interpreter.
     override fun close() {
         executor?.shutdownNow()
-        interpreter?.close()
+        interpreterProvider.close()
         executor = null
-        interpreter = null
-        if (delegate is Closeable) {
-            delegate.close()
+    }
+
+    /******************TRAINING********************/
+    // Process a batch of training samples.
+    private fun processBatchTensors(
+        interpreter: Interpreter,
+        config: InterpreterProvider.Config,
+        batch: List<TrainingSample>
+    ): Pair<Float, Float> {
+        val batchSize = batch.size
+
+        /*********************INPUTS*********************/
+        val inputImageBuffer = TensorBuffer.createFixedSize(
+            intArrayOf(batchSize, IMG_SIZE, IMG_SIZE, 1),
+            DataType.FLOAT32
+        )
+        val labelBuffer = TensorBuffer.createFixedSize(
+            intArrayOf(batchSize),
+            DataType.FLOAT32
+        )
+        batch.forEachIndexed { index, sample ->
+            inputImageBuffer.buffer.position(index * IMG_SIZE * IMG_SIZE * FLOAT_SIZE)
+            inputImageBuffer.buffer.put(sample.toByteBuffer())
+            labelBuffer.buffer.putInt(sample.label)
         }
+        inputImageBuffer.buffer.rewind()
+        labelBuffer.buffer.rewind()
+
+        val inputs = mapOf(
+            "x" to inputImageBuffer.buffer,
+            "y" to labelBuffer.buffer
+        )
+
+        /*********************OUTPUTS*********************/
+        val outputLossBuffer =
+            TensorBuffer.createFixedSize(intArrayOf(1), DataType.FLOAT32)
+        val outputAccuracyBuffer =
+            TensorBuffer.createFixedSize(intArrayOf(1), DataType.FLOAT32)
+        val outputs = mutableMapOf<String, Any>(
+            "loss" to outputLossBuffer.buffer,
+            "accuracy" to outputAccuracyBuffer.buffer
+        )
+
+        /**********************TRAIN**********************/
+        interpreter.runSignature(inputs, outputs, config.signature)
+
+        val loss = outputLossBuffer.floatArray[0]
+        val accuracy = outputAccuracyBuffer.floatArray[0]
+
+        return loss to accuracy
     }
 
-    /***************************************/// test
-    fun mnistTraining(){// test
+    // Validate the model on the validation set.
+    private fun validateModel(
+        interpreter: Interpreter,
+        validationSet: List<TrainingSample>
+    ): Float {
+        var correctPredictions = 0
+        var totalSamples = 0
 
-        val mnistLoader = MnistLoader()
-        var samples = mnistLoader.loadTrainingSamples(context,"training_samples.dat")
-        if (samples != null) {
-            trainingSamples.addAll(samples.subList(0,150))
-        }
-
-        for (i in 1 .. 9) {
-            samples = mnistLoader.loadTrainingSamples(context,"training_samples_$i.dat")
-            Log.d(MODEL_LOG_TAG, "Loaded ${samples!!.size} samples")
-            trainingSamples.addAll(samples.subList(0,150))
-            Log.d(MODEL_LOG_TAG, "Loaded ${trainingSamples.size} samples")
-        }
-        Log.d(MODEL_LOG_TAG, "Loaded ${trainingSamples.size} total samples")
-        //startTraining2()
-    }
-
-
-    fun savesamples(num: String) { // test
-
-        val mnistLoader = MnistLoader()
-        mnistLoader.saveTrainingSamples(context,  "training_samples_$num.dat", trainingSamples)
-    }
-
-    fun loadsamples(num: String): List<TrainingSample>? { // test
-
-        val mnistLoader = MnistLoader()
-        return mnistLoader.loadTrainingSamples(context,  "training_samples_$num.dat")
-    }
-    /***************UTILS********************/
-
-    // Preprocess the input image to byte buffer for model input
-    private fun preprocessImage(bitmap: Bitmap): ByteBuffer {
-        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, IMG_SIZE, IMG_SIZE, true)
-        val byteBuffer = ByteBuffer.allocateDirect(FLOAT_SIZE * IMG_SIZE * IMG_SIZE).apply {
-            order(ByteOrder.nativeOrder())
-        }
-        val pixels = IntArray(IMG_SIZE * IMG_SIZE)
-        resizedBitmap.getPixels(pixels, 0, 28, 0, 0, IMG_SIZE, IMG_SIZE)
-
-        for (pixelValue in pixels) {
-            byteBuffer.putFloat(convertPixel(pixelValue))
-        }
-        return byteBuffer
-    }
-
-    // Convert RGB to grayscale
-    private fun convertPixel(color: Int): Float {
-        return (255 - ((color shr 16 and 0xFF) * 0.299f
-                + (color shr 8 and 0xFF) * 0.587f
-                + (color and 0xFF) * 0.114f)) / 255.0f
-    }
-
-    // Create a batch of training samples
-    private fun trainingBatchesIterator(trainBatchSize: Int): Iterator<List<TrainingSample>> {
-
-        return object : Iterator<List<TrainingSample>> {
-
-            private var nextIndex = 0
-
-            override fun hasNext(): Boolean {
-                return nextIndex < trainingSamples.size
+        validationSet.forEach { sample ->
+            val inputBuffer = ByteBuffer.allocateDirect(IMG_SIZE * IMG_SIZE * 4).apply {
+                order(ByteOrder.nativeOrder())
+                put(sample.image)
+                rewind()
             }
 
-            override fun next(): List<TrainingSample> {
-                val fromIndex = nextIndex
-                val toIndex: Int = nextIndex + trainBatchSize
-                nextIndex = toIndex
-                return if (toIndex >= trainingSamples.size) {
-                    trainingSamples.subList(
-                        trainingSamples.size - trainBatchSize,
-                        trainingSamples.size
-                    )
-                } else {
-                    trainingSamples.subList(fromIndex, toIndex)
-                }
+            val outputProbabilitiesBuffer = ByteBuffer.allocateDirect(CLASSES * 4).apply {
+                order(ByteOrder.nativeOrder())
             }
+            val outputLogitsBuffer = ByteBuffer.allocateDirect(CLASSES * 4).apply {
+                order(ByteOrder.nativeOrder())
+            }
+
+            val inputs = mapOf("x" to inputBuffer)
+            val outputs = mapOf(
+                "output" to outputProbabilitiesBuffer,
+                "logits" to outputLogitsBuffer
+            )
+            interpreter.runSignature(inputs, outputs, "infer")
+            outputProbabilitiesBuffer.rewind()
+            val probabilities = FloatArray(CLASSES)
+            outputProbabilitiesBuffer.asFloatBuffer().get(probabilities)
+
+            val predictedClass = probabilities.indices.maxByOrNull { probabilities[it] } ?: -1
+            if (predictedClass == sample.label) {
+                correctPredictions++
+            }
+            totalSamples++
         }
+
+        return correctPredictions.toFloat() / totalSamples
     }
 
+
+    /****************EARLY STOPPING****************/
+    private val patience: Int = 9
+    private val minDelta: Float = 0.001f
+    private var bestLoss = Float.MAX_VALUE
+    private var patienceCounter = 0
+    // Check if early stopping should be triggered
+    private fun shouldStopTraining(currentLoss: Float): Boolean {
+        if (currentLoss < bestLoss - minDelta) {
+            bestLoss = currentLoss
+            patienceCounter = 0
+        } else {
+            patienceCounter++
+        }
+
+        return patienceCounter >= patience
+    }
+
+
+    /*******************OTHER**********************/
+    // Save samples to internal storage
+    fun saveSamplesToInternalStg(samplesFileName: String) {
+        samplesProcessor.saveSamplesToInternalStorage(context, samplesFileName) // saving
+
+    }
+
+    // Load samples from internal storage
+    fun loadSavedSamples(title: String) {
+        samplesProcessor.loadSamplesFromInternalStorage(context, title)
+    }
+
+    // Clear all samples from the samples processor
+    fun clearAllSamples() {
+        samplesProcessor.clearSamples()
+    }
+
+    // Set the event listener for the model controller
+    fun setEventListener(eventListener: LearningModelEventListener) {
+        this.eventListener = eventListener
+    }
+
+    // Set the number of threads for the interpreter
+    fun setNumThreads(numThreads: Int) {
+        Log.d(MODEL_LOG_TAG, "Setting number of threads to $numThreads")
+        if (interpreterProvider.setNumberOfThreads(numThreads))
+            restoreModel()
+    }
+
+    // Check if the model is initialized
+    fun isModelInitialized(): Boolean {
+        return interpreterProvider.isModelInitialized()
+    }
 
     /*****************CONSTANTS********************/
     companion object {
-
         const val FLOAT_SIZE = 4
         const val CLASSES = 10
         const val IMG_SIZE = 28
-        const val BATCH_SIZE = 20
 
     }
+
+
+    /***TESTER************************BORRAR LUEGO***********/
+    // test sin usar tensores (no hay mejora)
+    private fun processBatch2(
+        interpreter: Interpreter,
+        config: InterpreterProvider.Config,
+        batch: List<TrainingSample>
+    ): Pair<Float, Float> {
+        val batchSize = batch.size
+
+        val inputBuffer =
+            ByteBuffer.allocateDirect(batchSize * IMG_SIZE * IMG_SIZE * FLOAT_SIZE)
+                .apply {
+                    order(ByteOrder.nativeOrder())
+                }
+        val labelBuffer = IntBuffer.allocate(batchSize)
+
+        batch.forEach { sample ->
+            inputBuffer.put(sample.toByteBuffer())
+            labelBuffer.put(sample.label)
+        }
+
+        inputBuffer.rewind()
+        labelBuffer.rewind()
+
+        val outputLossBuffer = FloatBuffer.allocate(1)
+        val outputAccuracyBuffer = FloatBuffer.allocate(1)
+
+        val inputs = mapOf(
+            "x" to inputBuffer,
+            "y" to labelBuffer
+        )
+        val outputs = mapOf("loss" to outputLossBuffer, "accuracy" to outputAccuracyBuffer)
+
+        interpreter.runSignature(inputs, outputs, config.signature)
+
+        val loss = outputLossBuffer.get(0)
+        val accuracy = outputAccuracyBuffer.get(0)
+
+        Log.d(MODEL_LOG_TAG, "Training Loss: $loss, Accuracy: $accuracy")
+
+        return loss to accuracy
+    }
+
 }

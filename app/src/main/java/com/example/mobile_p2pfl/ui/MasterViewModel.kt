@@ -7,13 +7,10 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mobile_p2pfl.ai.controller.LearningModel
-import com.example.mobile_p2pfl.ai.controller.LearningModelTester
-import com.example.mobile_p2pfl.ai.testing.ModelControllerWithSignatures
 import com.example.mobile_p2pfl.common.Device
 import com.example.mobile_p2pfl.common.GrpcEventListener
 import com.example.mobile_p2pfl.common.Values.GRPC_LOG_TAG
 import com.example.mobile_p2pfl.protocol.comms.BidirectionalClientGRPC
-import com.example.mobile_p2pfl.ui.fragments.connection.ConnectionViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -84,7 +81,7 @@ class MasterViewModel : ViewModel() {
 
     /*******************************MODEL********************************************/
 
-    lateinit var modelController: LearningModelTester //ModelControllerWithSignatures //todo testing training
+    lateinit var modelController: LearningModel
 
     // whether is training or not
     val _isTraining = MutableLiveData<Boolean>().apply {
@@ -94,7 +91,7 @@ class MasterViewModel : ViewModel() {
 
 
     fun initializeModelController(context: Context, numThreads: Int, device: Device = Device.CPU) {
-        modelController = LearningModelTester(context) //, Device.CPU
+        modelController = LearningModel(context) //, Device.CPU
         modelController.setNumThreads(numThreads)
         Log.v("MODEL CONTROLLER", "Model controller initialized numthreads: $numThreads")
     }

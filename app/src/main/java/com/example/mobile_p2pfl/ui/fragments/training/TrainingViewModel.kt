@@ -21,6 +21,21 @@ class TrainingViewModel() : ViewModel() {
 
     /*********************************************/
 
+    val _fileName = MutableLiveData<String>().apply {
+        value = ""
+    }
+    val _saveSamples = MutableLiveData<Boolean>().apply {
+        value = false
+    }
+    val _clearSamples = MutableLiveData<Boolean>().apply {
+        value = false
+    }
+
+
+
+
+    /*********************************************/
+
     val _loading = MutableLiveData<Boolean>().apply {
         value = false
     }

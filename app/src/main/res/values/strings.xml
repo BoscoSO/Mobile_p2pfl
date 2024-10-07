@@ -46,12 +46,17 @@
     <string name="clear_sample_description">Clears the sample`s board</string>
     <string name="samples_lbl">"Collected:"</string>
     <string name="loaded_samples_lbl">"Loaded:"</string>
-    <string name="accuracy">Accuracy:</string>
+    <string name="accuracy">Acc:</string>
     <string name="loss">Loss:</string>
-    <string name="validation_accuracy">Validation accuracy:</string>
+    <string name="validation_accuracy">ValAcc:</string>
     <string name="_0_00">0.00</string>
     <string name="detect_icn_dscr">Classifies the image given in the drawing</string>
-    <string name="saved_samples">Auto Saved Samples:</string>
+    <string name="saved_samples">Saved Samples:</string>
     <string name="reload_samples">Carga los datos del archivo guardado para usar con el modelo</string>
+    <string name="options_lbl">Options:</string>
+    <string name="save_samples_checkbox_lbl">Save samples to storage</string>
+    <string name="save_samples_file_name_hint">File Name</string>
+    <string name="icn_options_panel">Opens/close the options panel</string>
+    <string name="clear_all_samples">Clear all samples after training</string>
 
 </resources>

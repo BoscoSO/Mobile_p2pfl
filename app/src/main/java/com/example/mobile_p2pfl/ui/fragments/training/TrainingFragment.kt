@@ -14,11 +14,9 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.mobile_p2pfl.R
 import com.example.mobile_p2pfl.ai.controller.LearningModel.Companion.IMG_SIZE
-import com.example.mobile_p2pfl.ai.controller.MnistLoader
 import com.example.mobile_p2pfl.common.LearningModelEventListener
 import com.example.mobile_p2pfl.common.Values.TRAINER_FRAG_LOG_TAG
 import com.example.mobile_p2pfl.databinding.FragmentTrainingBinding
-import com.example.mobile_p2pfl.ui.ConnectionState
 import com.example.mobile_p2pfl.ui.MasterViewModel
 import java.io.File
 
@@ -45,7 +43,7 @@ class TrainingFragment : Fragment() {
         override fun onLoadingFinished() {
             trainingViewModel.setInfo("Done")
             trainingViewModel.stopLoading()
-            updateSavedSamples()
+            afterTraining()
         }
 
         override fun onError(message: String) {
@@ -70,39 +68,15 @@ class TrainingFragment : Fragment() {
 
 
         initView()
-        setupTrainer()
+        setListeners()
         updateSavedSamples()
 
 
         return root
     }
 
-    private fun updateSavedSamples() {
-        val directory = File(binding.root.context.filesDir, "saved_samples")
 
-        val fileNames =
-            if (directory.exists() && directory.isDirectory) {
-                directory.listFiles()?.filter { it.isFile }?.map { it.name } ?: emptyList()
-            } else {
-                emptyList()
-            }
-
-
-        val adapter =
-            ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, fileNames)
-        binding.sampleReloadSelector.adapter = adapter
-    }
-
-    private fun setupTrainer() {
-        if (masterViewModel._isTraining.value == true) {
-            Toast.makeText(
-                binding.root.context,
-                R.string.exception_training_in_progress,
-                Toast.LENGTH_LONG
-            ).show()
-        }
-    }
-
+    @SuppressLint("DefaultLocale")
     private fun initView() {
         val npNumber = binding.npNumber
         npNumber.minValue = 0
@@ -113,7 +87,6 @@ class TrainingFragment : Fragment() {
         binding.btnTraining.isChecked = masterViewModel._isTraining.value!!
 
         masterViewModel.isTraining.observe(viewLifecycleOwner) { isTraining ->
-            binding.btnAddSample.isEnabled = !isTraining
             binding.sbThreadsSelector.isEnabled = !isTraining
         }
         trainingViewModel.info.observe(viewLifecycleOwner) { info ->
@@ -126,19 +99,22 @@ class TrainingFragment : Fragment() {
             binding.tvErrorMsg.visibility = View.VISIBLE
             binding.tvInfoMsg.visibility = View.INVISIBLE
         }
+
         trainingViewModel.lastLoss.observe(viewLifecycleOwner) { loss ->
-            binding.tvLossOut.text = loss.toString()
+
+            binding.tvLossOut.text = String.format( "%.5f", loss)
         }
         trainingViewModel.lastAccuracy.observe(viewLifecycleOwner) { accuracy ->
-            binding.tvAccOut.text = accuracy.toString()
+            binding.tvAccOut.text =String.format("%.5f", accuracy)
         }
         trainingViewModel.lastValAccuracy.observe(viewLifecycleOwner) { accuracy ->
-            binding.tvValAccOut.text = accuracy.toString()
+            binding.tvValAccOut.text = String.format("%.5f", accuracy)
         }
         trainingViewModel.loading.observe(viewLifecycleOwner) { isLoading ->
-            if (isLoading)
+            if (isLoading) {
                 binding.loadingProgressBar.visibility = View.VISIBLE
-            else {
+                masterViewModel._isTraining.value = true
+            } else {
                 binding.loadingProgressBar.visibility = View.INVISIBLE
                 binding.btnTraining.isChecked = false
                 masterViewModel._isTraining.value = false
@@ -154,6 +130,29 @@ class TrainingFragment : Fragment() {
             binding.tvLoadedSamplesNumbLbl.text = samples.toString()
         }
 
+
+    }
+
+    private fun setListeners() {
+
+
+        binding.btnOpenOptions.setOnClickListener {
+            binding.lyOptions.visibility = View.VISIBLE
+            binding.btnCloseOptions.visibility = View.VISIBLE
+            binding.btnOpenOptions.visibility = View.GONE
+        }
+        binding.btnCloseOptions.setOnClickListener {
+            binding.lyOptions.visibility = View.GONE
+            binding.btnCloseOptions.visibility = View.GONE
+            binding.btnOpenOptions.visibility = View.VISIBLE
+        }
+        binding.checkboxClearAll.setOnClickListener {
+            trainingViewModel._clearSamples.value = binding.checkboxClearAll.isChecked
+        }
+        binding.checkboxSave.setOnClickListener {
+            trainingViewModel._saveSamples.value = binding.checkboxSave.isChecked
+
+        }
         binding.sbThreadsSelector.setOnSeekBarChangeListener(object :
             SeekBar.OnSeekBarChangeListener {
             @SuppressLint("SetTextI18n")
@@ -179,12 +178,15 @@ class TrainingFragment : Fragment() {
             onTrainingClick()
         }
 
-        binding.sampleReload.setOnClickListener{
+        binding.sampleReload.setOnClickListener {
             val strTitle = binding.sampleReloadSelector.selectedItem.toString()
             masterViewModel.modelController.loadSavedSamples(strTitle)
-            trainingViewModel._loadedSamples.value = masterViewModel.modelController.getSamplesSize()
+            trainingViewModel._loadedSamples.value =
+                masterViewModel.modelController.getSamplesSize()
         }
+
     }
+
 
     private fun onTrainingClick() {
         if (binding.btnTraining.isChecked) {
@@ -194,7 +196,6 @@ class TrainingFragment : Fragment() {
                 } catch (e: Exception) {
                     Log.v(TRAINER_FRAG_LOG_TAG, "Training couldn't start")
                 }
-                masterViewModel._isTraining.value = true
                 Log.v(TRAINER_FRAG_LOG_TAG, "Training started")
             } else {
                 binding.btnTraining.isChecked = false
@@ -203,8 +204,8 @@ class TrainingFragment : Fragment() {
         } else {
             masterViewModel.modelController.pauseTraining()
             Log.v(TRAINER_FRAG_LOG_TAG, "Training paused")
-        }
 
+        }
     }
 
     private fun checkModelAndSamples(): Boolean {
@@ -216,18 +217,20 @@ class TrainingFragment : Fragment() {
             ).show()
             return false
         }
-
-        val trainer = masterViewModel.modelController
-
-        if (trainer.getSamplesSize() >= 8) {
-            return true
-        } else {
+        if (trainingViewModel._loading.value == true) {
+            Toast.makeText(binding.root.context, R.string.exception_training_in_progress, Toast.LENGTH_SHORT)
+                .show()
+            return false
+        }
+        if (masterViewModel.modelController.getSamplesSize() <= 9) {
             Toast.makeText(
                 binding.root.context,
                 R.string.exception_too_few_samples,
                 Toast.LENGTH_LONG
             ).show()
             return false
+        } else {
+            return true
         }
     }
 
@@ -235,6 +238,11 @@ class TrainingFragment : Fragment() {
     private fun addSampleClickListener() {
         if (binding.fpvSamplesDraw.empty) {
             Toast.makeText(binding.root.context, R.string.please_write_a_digit, Toast.LENGTH_SHORT)
+                .show()
+            return
+        }
+        if (trainingViewModel._loading.value == true) {
+            Toast.makeText(binding.root.context, R.string.exception_training_in_progress, Toast.LENGTH_SHORT)
                 .show()
             return
         }
@@ -249,6 +257,36 @@ class TrainingFragment : Fragment() {
         binding.fpvSamplesDraw.clear()
     }
 
+
+    private fun afterTraining() {
+        if (trainingViewModel._saveSamples.value == true) {
+            var ttle = binding.etSaveSamplesFileName.text.toString()
+            if (ttle.isEmpty()) {
+                ttle = "defaultName"
+            }
+            masterViewModel.modelController.saveSamplesToInternalStg(ttle)
+        }
+        if (trainingViewModel._clearSamples.value == true) {
+            masterViewModel.modelController.clearAllSamples()
+            trainingViewModel._loadedSamples.value =
+                masterViewModel.modelController.getSamplesSize()
+        }
+
+        updateSavedSamples()
+    }
+
+    private fun updateSavedSamples() {
+        val directory = File(binding.root.context.filesDir, "saved_samples")
+        val fileNames =
+            if (directory.exists() && directory.isDirectory) {
+                directory.listFiles()?.filter { it.isFile }?.map { it.name } ?: emptyList()
+            } else {
+                emptyList()
+            }
+        val adapter =
+            ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, fileNames)
+        binding.sampleReloadSelector.adapter = adapter
+    }
 
     override fun onDestroyView() {
         super.onDestroyView()

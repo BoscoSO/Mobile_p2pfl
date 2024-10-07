@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -82,123 +81,14 @@
             app:layout_constraintTop_toBottomOf="@id/top_layout" />
 
 
-        <ProgressBar
-            android:id="@+id/loading_progress_bar"
-            style="@style/Widget.AppCompat.ProgressBar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="8dp"
-            android:visibility="invisible"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/top_layout" />
-
-        <TextView
-            android:id="@+id/tv_error_msg"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="22dp"
-            android:textColor="#E63F3F"
-            app:layout_constraintEnd_toStartOf="@id/loading_progress_bar"
-            app:layout_constraintTop_toBottomOf="@id/top_layout" />
-
-        <TextView
-            android:id="@+id/tv_info_msg"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="22dp"
-            android:textColor="#3EBF4B"
-            app:layout_constraintEnd_toStartOf="@id/loading_progress_bar"
-            app:layout_constraintTop_toBottomOf="@id/top_layout" />
-
-
-        <TextView
-            android:id="@+id/tv_training_btn_lbl"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="22dp"
-            android:text="@string/btn_training"
-            android:textAlignment="center"
-            android:textSize="20sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_loaded_samples_lbl" />
-
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/btn_training"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="12dp"
-            android:thumb="@drawable/switch_train"
-            app:layout_constraintStart_toEndOf="@id/tv_training_btn_lbl"
-            app:layout_constraintTop_toBottomOf="@id/tv_loaded_samples_lbl" />
-
-        <LinearLayout
-            android:id="@+id/info_layout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="horizontal"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/btn_training">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="12dp"
-                android:text="@string/loss" />
-
-            <TextView
-                android:id="@+id/tv_loss_out"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="12dp"
-                android:text="@string/_0_00" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="12dp"
-                android:text="@string/accuracy" />
-
-            <TextView
-                android:id="@+id/tv_acc_out"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="12dp"
-                android:text="@string/_0_00" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/val_acc_layout"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/info_layout">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="12dp"
-                android:text="@string/validation_accuracy" />
-
-            <TextView
-                android:id="@+id/tv_val_acc_out"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="12dp"
-                android:text="@string/_0_00" />
-
-        </LinearLayout>
-
         <LinearLayout
             android:id="@+id/ly_samples_reload"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="12dp"
+            android:layout_margin="12dp"
             android:orientation="horizontal"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/val_acc_layout">
+            app:layout_constraintTop_toBottomOf="@id/tv_loaded_samples_lbl">
 
             <TextView
                 android:layout_width="match_parent"
@@ -208,7 +98,7 @@
             <Spinner
                 android:id="@+id/sample_reload_selector"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content" />
 
             <ImageButton
                 android:id="@+id/sample_reload"
@@ -222,53 +112,236 @@
 
         </LinearLayout>
 
+
         <TextView
-            android:id="@+id/tv_threads_lbl"
+            android:id="@+id/tv_training_btn_lbl"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="12dp"
-            android:text="@string/threads_lbl"
-            android:textSize="16sp"
+            android:layout_margin="22dp"
+            android:text="@string/btn_training"
+            android:textAlignment="center"
+            android:textSize="20sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/ly_samples_reload" />
 
-        <TextView
-            android:id="@+id/tv_threads_numb_lbl"
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/btn_training"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="12dp"
-            android:textSize="16sp"
-            app:layout_constraintStart_toEndOf="@id/tv_threads_lbl"
+            android:thumb="@drawable/switch_train"
+            app:layout_constraintStart_toEndOf="@id/tv_training_btn_lbl"
+            app:layout_constraintTop_toBottomOf="@id/ly_samples_reload" />
+
+
+        <TextView
+            android:id="@+id/tv_error_msg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:textColor="#E63F3F"
+            app:layout_constraintEnd_toStartOf="@id/loading_progress_bar"
             app:layout_constraintTop_toBottomOf="@id/ly_samples_reload" />
 
         <TextView
-            android:id="@+id/tv_threads_min_value"
+            android:id="@+id/tv_info_msg"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="12dp"
-            android:text="@string/threads_min_value"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_threads_lbl" />
+            android:layout_marginTop="22dp"
+            android:textColor="#3EBF4B"
+            app:layout_constraintEnd_toStartOf="@id/loading_progress_bar"
+            app:layout_constraintTop_toBottomOf="@id/ly_samples_reload" />
 
-        <SeekBar
-            android:id="@+id/sb_threads_selector"
-            style="@style/Widget.AppCompat.SeekBar.Discrete"
+        <ProgressBar
+            android:id="@+id/loading_progress_bar"
+            style="@style/Widget.AppCompat.ProgressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:visibility="invisible"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/ly_samples_reload" />
+
+
+        <LinearLayout
+            android:id="@+id/info_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="12dp"
-            android:max="5"
-            app:layout_constraintEnd_toStartOf="@id/tv_threads_max_value"
-            app:layout_constraintStart_toEndOf="@id/tv_threads_min_value"
-            app:layout_constraintTop_toBottomOf="@id/tv_threads_lbl" />
+            android:orientation="horizontal"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/btn_training">
 
-        <TextView
-            android:id="@+id/tv_threads_max_value"
-            android:layout_width="wrap_content"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="12dp"
+                android:text="@string/loss" />
+
+            <TextView
+                android:id="@+id/tv_loss_out"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="12dp"
+                android:text="@string/_0_00"
+                android:textColor="@color/blue_info" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="12dp"
+                android:text="@string/accuracy" />
+
+            <TextView
+                android:id="@+id/tv_acc_out"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="12dp"
+                android:text="@string/_0_00"
+                android:textColor="@color/blue_info" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="12dp"
+                android:text="@string/validation_accuracy" />
+
+            <TextView
+                android:id="@+id/tv_val_acc_out"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/_0_00"
+                android:textColor="@color/blue_info" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ly_show_options"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="12dp"
-            android:text="@string/threads_max_value"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_threads_lbl" />
+            android:orientation="horizontal"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/info_layout">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp"
+                android:text="@string/options_lbl"
+                android:textSize="16sp" />
+
+            <ImageButton
+                android:id="@+id/btn_open_options"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@color/inv"
+                android:contentDescription="@string/icn_options_panel"
+                android:src="@drawable/icn_arrow_right_24" />
+
+            <ImageButton
+                android:id="@+id/btn_close_options"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@color/inv"
+                android:contentDescription="@string/icn_options_panel"
+                android:src="@drawable/icn_arrow_drop_down_24"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ly_options"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/ly_show_options">
+
+            <CheckBox
+                android:id="@+id/checkbox_clear_all"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="@string/clear_all_samples" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:orientation="horizontal">
+
+                <CheckBox
+                    android:id="@+id/checkbox_save"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/save_samples_checkbox_lbl" />
+
+                <EditText
+                    android:id="@+id/et_save_samples_file_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="12dp"
+                    android:hint="@string/save_samples_file_name_hint"
+                    android:importantForAutofill="no"
+                    android:inputType="text" />
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="12dp"
+                    android:text="@string/threads_lbl"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tv_threads_numb_lbl"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="12dp"
+                    android:textSize="14sp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:weightSum="11">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="5"
+                    android:text="@string/threads_min_value" />
+
+                <SeekBar
+                    android:id="@+id/sb_threads_selector"
+                    style="@style/Widget.AppCompat.SeekBar.Discrete"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:max="5" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="5"
+                    android:text="@string/threads_max_value" />
+
+            </LinearLayout>
+
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

@@ -10,4 +10,5 @@
     <color name="swt_off_stroke">#7C0E0E</color>
     <color name="swt_off_background">#494949</color>
     <color name="inv">#00FFFFFF</color>
+    <color name="blue_info">#2859F0</color>
 </resources>

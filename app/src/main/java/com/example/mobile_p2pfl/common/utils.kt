@@ -92,55 +92,12 @@ data class TrainingSample(val image: ByteArray, val label: Int) : Serializable{
 
 
 
-
-fun getMappedModel(context: Context): MappedByteBuffer {
-    val file = File(context.filesDir, MODEL_FILE_NAME)
-    val fileInputStream = FileInputStream(file)
-    val fileChannel = fileInputStream.channel
-    return fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileChannel.size()).apply {
-        fileChannel.close()
-        fileInputStream.close()
-    }
-}
-fun saveModelToInternalStorage(context: Context): String? {
-    val assetManager = context.assets
-    var inputStream: InputStream? = null
-    var outputStream: FileOutputStream? = null
-    val outFile = File(context.filesDir, MODEL_FILE_NAME)
-
-    try {
-        inputStream = assetManager.open(MODEL_FILE_NAME)
-        outputStream = FileOutputStream(outFile)
-
-        val buffer = ByteArray(1024)
-        var read: Int
-        while (inputStream.read(buffer).also { read = it } != -1) {
-            outputStream.write(buffer, 0, read)
-        }
-
-        outputStream.flush()
-    } catch (e: IOException) {
-        e.printStackTrace()
-        return null
-    } finally {
-        inputStream?.close()
-        outputStream?.close()
-        Log.d("MainActivity", "File copied successfully: ${outFile.absolutePath}")
-    }
-
-    return outFile.absolutePath
-}
-
-
-
 interface LearningModelEventListener {
     fun updateProgress(loss: Float, accuracy: Float, validationAcc: Float)
     fun onLoadingStarted()
     fun onLoadingFinished()
     fun onError(message: String)
 }
-
-
 
 interface GrpcEventListener {
     fun onLoadingStarted()
