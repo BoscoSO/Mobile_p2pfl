@@ -17,12 +17,12 @@ import java.nio.channels.FileChannel
 
 class InterpreterProvider(private val context: Context, device: Device = Device.CPU) {
 
+    /********************************DELEGATE*************************************************/
     private val delegate: Delegate? = when (device) {
         Device.CPU -> null
         Device.NNAPI -> getNnApiDelegate()
         Device.GPU -> getGpuDelegate()
     }
-
     private fun getNnApiDelegate(): Delegate? {
         return try {
             val options = NnApiDelegate.Options().apply {
@@ -52,27 +52,13 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
         }
     }
 
-    enum class Config(val signature: String, val batchSize: Int) {
-        XS("train_fixed_batch_xs", 8),
-        S("train_fixed_batch_s", 16),
-        M("train_fixed_batch_m", 32),
-        L("train_fixed_batch_l", 64)
-    }
-
-    fun getOptimalConfigFor(samplesSize: Int): Config =
-        when {
-            samplesSize <= 32 -> Config.XS
-            samplesSize <= 64 -> Config.S
-            samplesSize <= 128 -> Config.M
-            else -> Config.L
-        }
-
-//    private var lastBatchSize: Int = 1
-
+    /********************************VARIABLES*************************************************/
 
     private var interpreter: Interpreter? = null
     private var isModelInitialized: Boolean = false
     private var numThreadsOp: Int = 2
+
+    /********************************INIT*****************************************************/
 
     init {
         interpreter = createInterpreter()
@@ -90,6 +76,8 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
         return isModelInitialized
     }
 
+    /************************INTERPRETER MANAGER**********************************************/
+    // Return interpreter
     fun getInterpreter(): Interpreter? {
         if (interpreter == null) {
             //interpreter?.close()
@@ -99,7 +87,7 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
         return interpreter
     }
 
-
+    // Create interpreter
     private fun createInterpreter(): Interpreter? {
         val options = Interpreter.Options().apply {
             numThreads = numThreadsOp
@@ -122,6 +110,7 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
         }
     }
 
+    // Load model from internal storage
     private fun getMappedModel(): MappedByteBuffer {
         val file = File(context.filesDir, MODEL_FILE_NAME)
         val fileInputStream = FileInputStream(file)
@@ -132,6 +121,24 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
         }
     }
 
+    /*******************************CONFIG****************************************************/
+
+    enum class Config(val signature: String, val batchSize: Int) {
+        XS("train_fixed_batch_xs", 8),
+        S("train_fixed_batch_s", 16),
+        M("train_fixed_batch_m", 32),
+        L("train_fixed_batch_l", 64)
+    }
+
+    fun getOptimalConfigFor(samplesSize: Int): Config =
+        when {
+            samplesSize <= 32 -> Config.XS
+            samplesSize <= 64 -> Config.S
+            samplesSize <= 128 -> Config.M
+            else -> Config.L
+        }
+
+    /********************************OTHER****************************************************/
 
     fun close() {
         interpreter?.close()

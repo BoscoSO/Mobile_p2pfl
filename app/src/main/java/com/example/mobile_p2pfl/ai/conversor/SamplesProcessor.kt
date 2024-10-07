@@ -24,6 +24,8 @@ import java.nio.ByteOrder
 class SamplesProcessor {
     private val samples = mutableListOf<TrainingSample>()
 
+    /*********************************SAVE AND LOAD************************************************/
+
     fun saveSamplesToInternalStorage(context: Context, title: String) {
         val directory = File(context.filesDir, "saved_samples")
         if (!directory.exists()) {
@@ -66,7 +68,6 @@ class SamplesProcessor {
         this.samples.addAll(samples)
     }
 
-
     /*********************************PROCESS IMAGE************************************************/
     private val imageProcessor = ImageProcessor.Builder()
         .add(ResizeWithCropOrPadOp(IMG_SIZE, IMG_SIZE))
@@ -92,11 +93,7 @@ class SamplesProcessor {
     fun clearSamples() {
         samples.clear()
     }
-    //fun getSamples(): List<TrainingSample> = samples
-
     fun samplesSize(): Int = samples.size
-
-
 
     /******************************AUGMENTATION************************************************/
     private fun getAugmentedSamples(): List<TrainingSample> {
@@ -110,21 +107,10 @@ class SamplesProcessor {
         return augmentedSamples
     }
     private fun flip(imageBuffer: ByteBuffer, sx: Float = -1f, sy: Float = 1f): ByteBuffer {
-//        var bitmap = image.bitmap
-//        if (bitmap.config != Bitmap.Config.ARGB_8888) {
-//            bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
-//        }
-//
-//        val matrix = Matrix().apply { postScale(sx, sy) }
-//        val flippedBitmap = Bitmap.createBitmap(
-//            bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true
-//        )
-//        return getProcessedImage(flippedBitmap)
         val bitmap = Bitmap.createBitmap(IMG_SIZE,IMG_SIZE, Bitmap.Config.ARGB_8888)
         imageBuffer.rewind()
         bitmap.copyPixelsFromBuffer(imageBuffer)
 
-        // Aplicar la transformación
         val matrix = Matrix().apply { postScale(sx, sy) }
         val flippedBitmap = Bitmap.createBitmap(
             bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true
