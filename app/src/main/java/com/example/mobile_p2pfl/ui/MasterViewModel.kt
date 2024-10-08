@@ -7,7 +7,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mobile_p2pfl.ai.controller.LearningModel
-import com.example.mobile_p2pfl.common.Device
 import com.example.mobile_p2pfl.common.GrpcEventListener
 import com.example.mobile_p2pfl.common.Values.GRPC_LOG_TAG
 import com.example.mobile_p2pfl.protocol.comms.BidirectionalClientGRPC
@@ -21,7 +20,7 @@ class MasterViewModel : ViewModel() {
     val _connectionState = MutableLiveData<ConnectionState>()
     val connectionState: LiveData<ConnectionState> = _connectionState
 
-    var grpcClient: BidirectionalClientGRPC =
+    private var grpcClient: BidirectionalClientGRPC =
         BidirectionalClientGRPC() //StreamingClientGRPC //ClientGRPC
 
     fun initializeConnection(context: Context) {
@@ -35,7 +34,7 @@ class MasterViewModel : ViewModel() {
         viewModelScope.launch {
             var isConnected = grpcClient.checkConnection()
 
-            val timeout = 10_000L  // Límite de tiempo 10 segundos
+            val timeout = 10_000L  // time limit
             val startTime = System.currentTimeMillis()
             while (!isConnected) {
                 if (System.currentTimeMillis() - startTime > timeout) {
@@ -59,7 +58,7 @@ class MasterViewModel : ViewModel() {
             try {
                 grpcClient.sendWeights()
             } catch (e: Exception) {
-                // Manejar errores al enviar pesos
+                // errors
             }
         }
     }
@@ -69,7 +68,7 @@ class MasterViewModel : ViewModel() {
             try {
                 grpcClient.initModel()
             } catch (e: Exception) {
-                // Manejar errores al recibir el modelo
+                // errors
             }
         }
     }
@@ -93,12 +92,11 @@ class MasterViewModel : ViewModel() {
     fun initializeModelController(context: Context, numThreads: Int) {
         modelController = LearningModel(context) //, Device.CPU
         modelController.setNumThreads(numThreads)
-        Log.v("MODEL CONTROLLER", "Model controller initialized numthreads: $numThreads")
     }
     fun setNumThreads(numThreads: Int) {
         modelController.setNumThreads(numThreads)
-        Log.v("MODEL CONTROLLER", "Model controller initialized numthreads: $numThreads")
     }
+
 
 
     /*************************************************************************************/

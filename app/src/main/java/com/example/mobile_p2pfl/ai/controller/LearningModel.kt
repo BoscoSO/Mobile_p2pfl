@@ -5,11 +5,11 @@ import android.graphics.Bitmap
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.widget.ArrayAdapter
 import com.example.mobile_p2pfl.ai.LearningModelController
 import com.example.mobile_p2pfl.ai.conversor.SamplesProcessor
 import com.example.mobile_p2pfl.ai.model.InterpreterProvider
 import com.example.mobile_p2pfl.common.Constants.CHECKPOINT_FILE_NAME
-import com.example.mobile_p2pfl.common.Device
 import com.example.mobile_p2pfl.common.LearningModelEventListener
 import com.example.mobile_p2pfl.common.Recognition
 import com.example.mobile_p2pfl.common.TrainingSample
@@ -20,8 +20,6 @@ import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.nio.FloatBuffer
-import java.nio.IntBuffer
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -29,8 +27,7 @@ import kotlin.system.measureTimeMillis
 
 
 class LearningModel(
-    private val context: Context,
-    device: Device = Device.CPU
+    private val context: Context
 ) : LearningModelController {
 
 
@@ -93,8 +90,8 @@ class LearningModel(
                 val confidence = outputArray[maxIdx]
 
 
-                Log.d("Inference", "Output probabilities: ${outputArray.contentToString()}")
-                Log.d("Inference", "Output logits: ${outputLogits.contentToString()}")
+                Log.d(MODEL_LOG_TAG, "Output probabilities: ${outputArray.contentToString()}")
+                Log.d(MODEL_LOG_TAG, "Output logits: ${outputLogits.contentToString()}")
                 return Recognition(label = maxIdx, confidence = confidence, timeCost = timeCost)
             } finally {
 
@@ -114,7 +111,7 @@ class LearningModel(
     }
 
     // Start the training process.
-    override fun startTraining() {
+    override fun startTraining(numEpochs: Int) {
         val interpreter = interpreterProvider.getInterpreter()
 
         if (!interpreterProvider.isModelInitialized()) {
@@ -139,8 +136,8 @@ class LearningModel(
 
         executor?.execute {
             synchronized(lock) {
-                var numEpochs = 0
-                while (executor?.isShutdown == false) {
+                var countEpochs = 0
+                while (executor?.isShutdown == false && countEpochs < numEpochs) {
                     var totalLoss = 0f
                     var totalAccuracy = 0f
                     var totalValidationAccuracy = 0f
@@ -172,18 +169,23 @@ class LearningModel(
                         }
                     val avgValidationAcc = totalValidationAccuracy / numSamplesProcessed
 
+                    countEpochs++
 
-                    numEpochs++
+                    val progress = (countEpochs.toFloat() / numEpochs.toFloat()) * 100
 
                     Log.d(
                         MODEL_LOG_TAG,
-                        "Epoch: $numEpochs: Accuracy $avgAccuracy/1  || Loss $avgLoss || Validation Acc $avgValidationAcc/1"
+                        "Epoch: $countEpochs/$numEpochs || Samples: Accuracy $avgAccuracy/1  || Loss $avgLoss || Validation Acc $avgValidationAcc/1"
                     )
+
                     if (shouldStopTraining(avgLoss)) {
                         Log.d(MODEL_LOG_TAG, "Early stopping triggered. Training stopped.")
                         pauseTraining()
-                    } else
-                        eventListener?.updateProgress(avgLoss, avgAccuracy, avgValidationAcc)
+                    }else
+                        eventListener?.updateProgress(avgLoss, avgAccuracy, avgValidationAcc, progress)
+
+                    if (countEpochs == numEpochs)
+                        pauseTraining()
 
                 }
             }
@@ -197,11 +199,7 @@ class LearningModel(
         executor?.let { executorService ->
             Thread {
                 try {
-                    if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
-                        Log.e(
-                            MODEL_LOG_TAG,
-                            "ExecutorService did not terminate in the specified time."
-                        )
+                    if (!executorService.awaitTermination(2, TimeUnit.SECONDS)) {
                         executorService.shutdownNow()
                     }
                 } catch (e: InterruptedException) {
@@ -351,6 +349,7 @@ class LearningModel(
     private val minDelta: Float = 0.001f
     private var bestLoss = Float.MAX_VALUE
     private var patienceCounter = 0
+
     // Check if early stopping should be triggered
     private fun shouldStopTraining(currentLoss: Float): Boolean {
         if (currentLoss < bestLoss - minDelta) {
@@ -364,23 +363,33 @@ class LearningModel(
     }
 
 
-    /*******************OTHER**********************/
+    /**************SAMPLE MANAGER******************/
     // Save samples to internal storage
     fun saveSamplesToInternalStg(samplesFileName: String) {
         samplesProcessor.saveSamplesToInternalStorage(context, samplesFileName) // saving
 
     }
-
     // Load samples from internal storage
     fun loadSavedSamples(title: String) {
         samplesProcessor.loadSamplesFromInternalStorage(context, title)
     }
+    // List saved samples
+    fun listSavedSamplesAdapter(): ArrayAdapter<String> {
+        val adapter =
+            ArrayAdapter(
+                context,
+                android.R.layout.simple_spinner_item,
+                samplesProcessor.listSavedSamples(context)
+            )
 
+        return adapter
+    }
     // Clear all samples from the samples processor
     fun clearAllSamples() {
         samplesProcessor.clearSamples()
     }
 
+    /*******************OTHER**********************/
     // Set the event listener for the model controller
     fun setEventListener(eventListener: LearningModelEventListener) {
         this.eventListener = eventListener
@@ -388,7 +397,6 @@ class LearningModel(
 
     // Set the number of threads for the interpreter
     fun setNumThreads(numThreads: Int) {
-        Log.d(MODEL_LOG_TAG, "Setting number of threads to $numThreads")
         if (interpreterProvider.setNumberOfThreads(numThreads))
             restoreModel()
     }
@@ -408,6 +416,7 @@ class LearningModel(
 
 
     /***TESTER************************BORRAR LUEGO***********/
+/**********************************************************************************
     // test sin usar tensores (no hay mejora)
     private fun processBatch2(
         interpreter: Interpreter,
@@ -449,5 +458,5 @@ class LearningModel(
 
         return loss to accuracy
     }
-
+********************************************************************************************/
 }

@@ -58,5 +58,9 @@
     <string name="save_samples_file_name_hint">File Name</string>
     <string name="icn_options_panel">Opens/close the options panel</string>
     <string name="clear_all_samples">Clear all samples after training</string>
+    <string name="epochs">Epochs:</string>
+    <string name="default_epochs">5</string>
+    <string name="btn_less_epochs">reduce epochs in one</string>
+    <string name="btn_add_epochs">increment epochs in one</string>
 
 </resources>

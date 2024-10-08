@@ -81,7 +81,7 @@ data class TrainingSample(val image: ByteArray, val label: Int) : Serializable{
 
 
 interface LearningModelEventListener {
-    fun updateProgress(loss: Float, accuracy: Float, validationAcc: Float)
+    fun updateProgress(loss: Float, accuracy: Float, validationAcc: Float, progress: Float)
     fun onLoadingStarted()
     fun onLoadingFinished()
     fun onError(message: String)

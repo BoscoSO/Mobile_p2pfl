@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.example.mobile_p2pfl.common.Constants.MODEL_FILE_NAME
 import com.example.mobile_p2pfl.common.Device
+import com.example.mobile_p2pfl.common.Values.MODEL_LOG_TAG
 import org.tensorflow.lite.Delegate
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.gpu.CompatibilityList
@@ -33,7 +34,7 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
             }
             NnApiDelegate(options)
         } catch (e: Exception) {
-            Log.w("InterpreterProvider", "NNAPI not supported: ${e.message}")
+            Log.w(MODEL_LOG_TAG, "InterpreterProvider: NNAPI not supported: ${e.message}")
             null
         }
     }
@@ -43,11 +44,11 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
             try {
                 GpuDelegate(compatList.bestOptionsForThisDevice)
             } catch (e: Exception) {
-                Log.w("InterpreterProvider", "GPU Delegate not supported: ${e.message}")
+                Log.w(MODEL_LOG_TAG, "InterpreterProvider: GPU Delegate not supported: ${e.message}")
                 null
             }
         } else {
-            Log.w("InterpreterProvider", "GPU Delegate not supported on this device")
+            Log.w(MODEL_LOG_TAG, "InterpreterProvider: GPU Delegate not supported on this device")
             null
         }
     }
@@ -80,9 +81,7 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
     // Return interpreter
     fun getInterpreter(): Interpreter? {
         if (interpreter == null) {
-            //interpreter?.close()
             interpreter = createInterpreter()
-
         }
         return interpreter
     }
@@ -98,14 +97,12 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
             val model = getMappedModel()
             val interpreter = Interpreter(model, options)
 
-//            interpreter.resizeInput(0, intArrayOf(batchSize, IMG_SIZE, IMG_SIZE, 1))
-//            lastBatchSize = batchSize
             isModelInitialized = true
+            Log.d(MODEL_LOG_TAG, "InterpreterProvider: Model initialized")
             return interpreter
-
         } catch (e: Exception) {
             isModelInitialized = false
-            Log.e("InterpreterProvider", "Error creating interpreter: ${e.printStackTrace()}")
+            Log.e(MODEL_LOG_TAG, "InterpreterProvider: Error creating interpreter: ${e.printStackTrace()}")
             return null
         }
     }

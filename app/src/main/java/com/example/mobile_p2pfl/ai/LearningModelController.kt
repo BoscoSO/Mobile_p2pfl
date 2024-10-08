@@ -11,7 +11,7 @@ interface LearningModelController : Closeable {
 
     fun addTrainingSample(image: Bitmap, number: Int)
 
-    fun startTraining()
+    fun startTraining(numEpochs: Int)
 
     fun pauseTraining()
 

@@ -9,9 +9,7 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.example.mobile_p2pfl.R
-import com.example.mobile_p2pfl.common.Device
 import com.example.mobile_p2pfl.databinding.ActivityMainBinding
-import com.example.mobile_p2pfl.ui.fragments.connection.ConnectionViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
@@ -43,15 +41,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun init(){
 
-//        if(saveModelToInternalStorage(this) == null)
-//            Log.e("MainActivity", "Error al copiar el fichero")
-
-
         masterViewModel = ViewModelProvider(this)[MasterViewModel::class.java]
 
         masterViewModel.initializeConnection(this)//, ViewModelProvider(this)[ConnectionViewModel::class.java])
 
-        masterViewModel.initializeModelController(binding.root.context,2, Device.CPU)
+        masterViewModel.initializeModelController(binding.root.context,2)
 
     }
 

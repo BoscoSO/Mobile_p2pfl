@@ -6,6 +6,7 @@ import android.graphics.Matrix
 import android.util.Log
 import com.example.mobile_p2pfl.ai.model.InterpreterProvider.Companion.IMG_SIZE
 import com.example.mobile_p2pfl.common.TrainingSample
+import com.example.mobile_p2pfl.common.Values.MODEL_LOG_TAG
 import org.tensorflow.lite.support.common.ops.NormalizeOp
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
@@ -22,7 +23,36 @@ import java.nio.ByteOrder
 
 
 class SamplesProcessor {
+
     private val samples = mutableListOf<TrainingSample>()
+
+    /*********************************PROCESS IMAGE************************************************/
+    private val imageProcessor = ImageProcessor.Builder()
+        .add(ResizeWithCropOrPadOp(IMG_SIZE, IMG_SIZE))
+        .add(TransformToGrayscaleOp())
+        .add(NormalizeOp(0f, 255f))
+        .build()
+
+    fun getProcessedImage(bitmap: Bitmap): TensorImage {
+        val tensorImage = TensorImage.fromBitmap(bitmap)
+        return imageProcessor.process(tensorImage)
+    }
+
+    /*********************************SAMPLES MANAGER************************************************/
+
+    fun addSample(bitmap: Bitmap, label: Int) {
+        val tensorImage = TensorImage.fromBitmap(bitmap)
+        val processedTensorImage = imageProcessor.process(tensorImage)
+
+        samples.add(TrainingSample.fromTensorImage(processedTensorImage, label))
+        samples.shuffle()
+    }
+
+    fun clearSamples() {
+        samples.clear()
+    }
+
+    fun samplesSize(): Int = samples.size
 
     /*********************************SAVE AND LOAD************************************************/
 
@@ -37,11 +67,12 @@ class SamplesProcessor {
             ObjectOutputStream(FileOutputStream(file)).use { oos ->
                 oos.writeObject(samples)
             }
-            Log.d("SamplesProcessor", "Muestras guardadas correctamente")
+            Log.d(MODEL_LOG_TAG, "SamplesProcessor: Muestras guardadas correctamente")
         } catch (e: IOException) {
-            Log.e("SamplesProcessor", "Error al guardar muestras", e)
+            Log.e(MODEL_LOG_TAG, "SamplesProcessor: Error al guardar muestras", e)
         }
     }
+
     fun loadSamplesFromInternalStorage(context: Context, title: String) {
         val directory = File(context.filesDir, "saved_samples")
         val file = File(directory, title)
@@ -56,44 +87,29 @@ class SamplesProcessor {
                         samples.addAll(loadedSamples)
                     }
                 }
-                Log.d("SamplesProcessor", "Muestras cargadas correctamente")
+                Log.d(MODEL_LOG_TAG, "SamplesProcessor: Muestras cargadas correctamente")
             } catch (e: Exception) {
-                Log.e("SamplesProcessor", "Error al cargar muestras", e)
+                Log.e(MODEL_LOG_TAG, "SamplesProcessor: Error al cargar muestras", e)
                 e.printStackTrace()
             }
         } else {
-            Log.d("SamplesProcessor", "No se encontró el archivo de muestras")
+            Log.d(MODEL_LOG_TAG, "SamplesProcessor: No se encontró el archivo de muestras")
         }
 
         this.samples.addAll(samples)
     }
 
-    /*********************************PROCESS IMAGE************************************************/
-    private val imageProcessor = ImageProcessor.Builder()
-        .add(ResizeWithCropOrPadOp(IMG_SIZE, IMG_SIZE))
-        .add(TransformToGrayscaleOp())
-        .add(NormalizeOp(0f, 255f))
-        .build()
+    fun listSavedSamples(context: Context): List<String> {
+        val directory = File(context.filesDir, "saved_samples")
+        val fileNames =
+            if (directory.exists() && directory.isDirectory) {
+                directory.listFiles()?.filter { it.isFile }?.map { it.name } ?: emptyList()
+            } else {
+                emptyList()
+            }
 
-    fun getProcessedImage(bitmap: Bitmap): TensorImage {
-        val tensorImage = TensorImage.fromBitmap(bitmap)
-        return imageProcessor.process(tensorImage)
+        return fileNames
     }
-
-    /*********************************SAMPLE MANAGER************************************************/
-
-    fun addSample(bitmap: Bitmap, label: Int) {
-        val tensorImage = TensorImage.fromBitmap(bitmap)
-        val processedTensorImage = imageProcessor.process(tensorImage)
-
-        samples.add(TrainingSample.fromTensorImage(processedTensorImage, label))
-        samples.shuffle()
-
-    }
-    fun clearSamples() {
-        samples.clear()
-    }
-    fun samplesSize(): Int = samples.size
 
     /******************************AUGMENTATION************************************************/
     private fun getAugmentedSamples(): List<TrainingSample> {
@@ -101,13 +117,27 @@ class SamplesProcessor {
 
         samples.forEach { sample ->
             augmentedSamples.add(sample)
-            augmentedSamples.add(TrainingSample.fromByteBuffer(flip(sample.toByteBuffer()), sample.label))
-            augmentedSamples.add(TrainingSample.fromByteBuffer(flip(sample.toByteBuffer(), sx = 1f, sy = -1f), sample.label))
+            augmentedSamples.add(
+                TrainingSample.fromByteBuffer(
+                    flip(sample.toByteBuffer()),
+                    sample.label
+                )
+            )
+            augmentedSamples.add(
+                TrainingSample.fromByteBuffer(
+                    flip(
+                        sample.toByteBuffer(),
+                        sx = 1f,
+                        sy = -1f
+                    ), sample.label
+                )
+            )
         }
         return augmentedSamples
     }
+
     private fun flip(imageBuffer: ByteBuffer, sx: Float = -1f, sy: Float = 1f): ByteBuffer {
-        val bitmap = Bitmap.createBitmap(IMG_SIZE,IMG_SIZE, Bitmap.Config.ARGB_8888)
+        val bitmap = Bitmap.createBitmap(IMG_SIZE, IMG_SIZE, Bitmap.Config.ARGB_8888)
         imageBuffer.rewind()
         bitmap.copyPixelsFromBuffer(imageBuffer)
 
@@ -128,7 +158,10 @@ class SamplesProcessor {
     }
 
     /********************************ITERATOR*************************************************/
-    fun trainingBatchesIterator(trainBatchSize: Int = 1, validationSet: Boolean = false): Iterator<List<TrainingSample>> {
+    fun trainingBatchesIterator(
+        trainBatchSize: Int = 1,
+        validationSet: Boolean = false
+    ): Iterator<List<TrainingSample>> {
 
         val trainingSamples = getAugmentedSamples()
         val (valSet, trainSet) = trainingSamples.shuffled().let {
