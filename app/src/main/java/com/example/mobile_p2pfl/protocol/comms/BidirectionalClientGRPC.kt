@@ -14,14 +14,9 @@ import io.grpc.ConnectivityState
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.stub.StreamObserver
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
@@ -47,8 +42,8 @@ class BidirectionalClientGRPC(
         .executor(Dispatchers.IO.asExecutor())
         .build()
 
-    //private var blockingStub: NodeServiceGrpc.NodeServiceBlockingStub? = null
     private var asyncStub = NodeServiceGrpc.newStub(channel)
+
     private val clientId = UUID.randomUUID().toString()
     private var sessionId: String? = null
 
@@ -144,7 +139,6 @@ class BidirectionalClientGRPC(
                             message.payload,
                             message.isLast
                         )
-
                         "SET_MODEL_RESPONSE" -> handleSetModelResponse(message)
 
                         else -> Log.d(GRPC_LOG_TAG, "Received message: ${message.cmd}")
@@ -154,7 +148,7 @@ class BidirectionalClientGRPC(
                 override fun onError(t: Throwable) {
                     isRunning.set(false)
                     Log.e(GRPC_LOG_TAG, "Stream error: ${t.message}")
-                    eventListener!!.onError("END")
+                    eventListener?.onError("END")
                     //continuation.resumeWithException(t)
                 }
 
@@ -201,21 +195,17 @@ class BidirectionalClientGRPC(
 
     // Send a message Set_model to the server
     fun sendWeights() {
-        if (this.eventListener == null) {
-            Log.e(GRPC_LOG_TAG, "eventListener is null")
-            return
-        }
-        this.eventListener!!.onLoadingStarted()
+        this.eventListener?.onLoadingStarted()
 
         if (!isRunning.get()) {
             Log.e(GRPC_LOG_TAG, "Not connected")
-            this.eventListener!!.onError("Not connected")
+            this.eventListener?.onError("Not connected")
             return
         }
         val file = File(context!!.filesDir, CHECKPOINT_FILE_NAME)
         if (!file.exists()) {
             Log.e(GRPC_LOG_TAG, "Weights file not found")
-            this.eventListener!!.onError("Weights file not found")
+            this.eventListener?.onError("Weights file not found")
             return
         }
         val weightsData = file.readBytes()
@@ -239,7 +229,7 @@ class BidirectionalClientGRPC(
 
         } catch (e: Exception) {
             bidirectionalStream?.onError(e)
-            this.eventListener!!.onError("can't send weights")
+            this.eventListener?.onError("can't send weights")
             throw e
         }
 
@@ -248,15 +238,11 @@ class BidirectionalClientGRPC(
 
     // Send a message Init_model to the server
     fun initModel() {
-        if (this.eventListener == null) {
-            Log.e(GRPC_LOG_TAG, "eventListener is null")
-            return
-        }
-        this.eventListener!!.onLoadingStarted()
+        this.eventListener?.onLoadingStarted()
 
         if (!isRunning.get()) {
             Log.e(GRPC_LOG_TAG, "Not connected")
-            this.eventListener!!.onError("Not connected")
+            this.eventListener?.onError("Not connected")
             return
         }
         val request = Node.Message.newBuilder()
@@ -291,24 +277,19 @@ class BidirectionalClientGRPC(
                 modelOutputStream?.close()
                 modelOutputStream = null
 
-
-                this.eventListener!!.onLoadingFinished()
+                this.eventListener?.onLoadingFinished()
 
                 Log.d(GRPC_LOG_TAG, "Model received and saved successfully.")
             }
         } catch (e: Exception) {
-            this.eventListener!!.onError("Can't save model")
+            this.eventListener?.onError("Can't save model")
             Log.e(GRPC_LOG_TAG, "Error receiving or saving model", e)
         }
     }
 
     // Handle the response of the Set_model message
     private fun handleSetModelResponse(message: Node.Message) {
-        if (this.eventListener != null)
-            this.eventListener!!.onLoadingFinished()
-        else
-            Log.e(GRPC_LOG_TAG, "sendWeightsListener is null")
-
+        eventListener?.onLoadingFinished()
         Log.d(GRPC_LOG_TAG, "Received message set model response: ${message.getArgs(0)}")
     }
 
