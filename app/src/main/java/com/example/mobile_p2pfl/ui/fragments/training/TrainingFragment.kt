@@ -260,7 +260,7 @@ class TrainingFragment : Fragment() {
             if (checkModelAndSamples()) {
                 try {
                     val epochs = binding.etNumber.text.toString().toInt()
-                    masterViewModel.modelController.startTraining(epochs)
+                    masterViewModel.modelController.train(epochs)
                 } catch (e: Exception) {
                     Log.v(TRAINER_FRAG_LOG_TAG, "Training couldn't start")
                 }

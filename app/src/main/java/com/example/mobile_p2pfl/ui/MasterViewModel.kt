@@ -7,9 +7,10 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mobile_p2pfl.ai.controller.LearningModel
+import com.example.mobile_p2pfl.ai.controller.TensorFlowLearnerController
 import com.example.mobile_p2pfl.common.GrpcEventListener
 import com.example.mobile_p2pfl.common.Values.GRPC_LOG_TAG
-import com.example.mobile_p2pfl.protocol.comms.BidirectionalClientGRPC
+import com.example.mobile_p2pfl.protocol.comms.ProxyClient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -20,11 +21,10 @@ class MasterViewModel : ViewModel() {
     val _connectionState = MutableLiveData<ConnectionState>()
     val connectionState: LiveData<ConnectionState> = _connectionState
 
-    private var grpcClient: BidirectionalClientGRPC =
-        BidirectionalClientGRPC() //StreamingClientGRPC //ClientGRPC
+    private var grpcClient: ProxyClient = ProxyClient() // BidirectionalClientGRPC()
 
     fun initializeConnection(context: Context) {
-        grpcClient = BidirectionalClientGRPC(context)
+        grpcClient = ProxyClient(context)
     }
 
     fun connect(loadingListener: GrpcEventListener) {
@@ -48,7 +48,7 @@ class MasterViewModel : ViewModel() {
             _connectionState.value =
                 if (isConnected) ConnectionState.CONNECTED else ConnectionState.DISCONNECTED
             if (isConnected) {
-                grpcClient.handshake()
+                grpcClient.setLearner(modelController) // testing
             }
         }
     }
@@ -56,9 +56,12 @@ class MasterViewModel : ViewModel() {
     fun sendWeights() {
         viewModelScope.launch {
             try {
-                grpcClient.sendWeights()
+//                grpcClient.sendWeights()
+
+                grpcClient.startMainStream()
             } catch (e: Exception) {
                 // errors
+                Log.e(GRPC_LOG_TAG, "Error sending weights: ${e.message}")
             }
         }
     }
@@ -75,12 +78,12 @@ class MasterViewModel : ViewModel() {
 
     fun disconnect() {
         _connectionState.postValue(ConnectionState.DISCONNECTED)
-        grpcClient.disconnect()
+//        grpcClient.disconnect()
     }
 
     /*******************************MODEL********************************************/
 
-    lateinit var modelController: LearningModel
+    lateinit var modelController: TensorFlowLearnerController
 
     // whether is training or not
     val _isTraining = MutableLiveData<Boolean>().apply {
@@ -90,13 +93,13 @@ class MasterViewModel : ViewModel() {
 
 
     fun initializeModelController(context: Context, numThreads: Int) {
-        modelController = LearningModel(context) //, Device.CPU
-        modelController.setNumThreads(numThreads)
-    }
-    fun setNumThreads(numThreads: Int) {
+        modelController = TensorFlowLearnerController(context) //, Device.CPU
         modelController.setNumThreads(numThreads)
     }
 
+    fun setNumThreads(numThreads: Int) {
+        modelController.setNumThreads(numThreads)
+    }
 
 
     /*************************************************************************************/
