@@ -13,7 +13,7 @@ interface TensorFlowLearnerInterface : Closeable {
 
     fun classify(image: Bitmap): Recognition
 
-    suspend fun validate(): Float
+    suspend fun validate(): Pair<Float, Float>
 
     fun train(numEpochs: Int)
 

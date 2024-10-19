@@ -12,7 +12,7 @@ import java.nio.ByteBuffer
 
 object Constants {
     const val MODEL_FILE_NAME: String = "mobile_net.tflite"
-    const val CHECKPOINT_FILE_NAME: String = "proxy_model.ckpt"
+    const val CHECKPOINT_FILE_NAME: String = "proxy_weights.ckpt"
 
 }
 object Values {

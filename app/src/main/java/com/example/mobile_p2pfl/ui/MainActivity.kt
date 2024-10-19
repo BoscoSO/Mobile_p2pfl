@@ -11,6 +11,7 @@ import androidx.navigation.ui.setupWithNavController
 import com.example.mobile_p2pfl.R
 import com.example.mobile_p2pfl.databinding.ActivityMainBinding
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
@@ -47,8 +48,35 @@ class MainActivity : AppCompatActivity() {
 
         masterViewModel.initializeModelController(binding.root.context,2)
 
+        copySamplesSetToInternal()
     }
 
+
+    private fun copySamplesSetToInternal() {
+
+        val directory = File(filesDir, "saved_samples")
+        if (!directory.exists()) {
+            directory.mkdirs()
+        }
+        val assetName = "samples_set.dat"
+        val file = File(directory, "samples_set.dat")
+
+
+        if (!file.exists()) {
+            try {
+                assets.open(assetName).use { input ->
+                    file.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                Log.d("FileOperation", "samples_set.dat copiado exitosamente a la memoria interna")
+            } catch (e: Exception) {
+                Log.e("FileOperation", "Error al copiar samples_set.dat: ${e.message}")
+            }
+        } else {
+            Log.d("FileOperation", "samples_set.dat ya existe en la memoria interna")
+        }
+    }
     override fun onDestroy() {
         super.onDestroy()
 

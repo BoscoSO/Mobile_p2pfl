@@ -1,7 +1,6 @@
 package com.example.mobile_p2pfl.protocol
 
 import android.content.Context
-import com.example.mobile_p2pfl.protocol.proto.Node
 import io.grpc.stub.StreamObserver
 
 interface IClientConnection {

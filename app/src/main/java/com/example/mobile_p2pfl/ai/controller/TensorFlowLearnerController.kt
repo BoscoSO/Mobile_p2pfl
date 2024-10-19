@@ -22,11 +22,13 @@ import org.tensorflow.lite.DataType
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.io.File
+import java.lang.Math.log
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import kotlin.math.ln
 import kotlin.system.measureTimeMillis
 
 
@@ -114,14 +116,14 @@ class TensorFlowLearnerController(
     }
 
 
-    override suspend fun validate(): Float {
+    override suspend fun validate(): Pair<Float, Float> {
         return withContext(Dispatchers.Default) {
             startTraining(1, onlyValidate = true)
             while (executor?.isShutdown == false) {
                 delay(100)
             }
 
-            avgValidationAcc
+            avgValidationLoss to avgValidationAcc
         }
     }
 
@@ -143,6 +145,7 @@ class TensorFlowLearnerController(
     private var avgLoss = 0f
     private var avgAccuracy = 0f
     private var avgValidationAcc = 0.0f
+    private var avgValidationLoss = 0.0f
 
     // Start the training process.
     private fun startTraining(numEpochs: Int, onlyValidate: Boolean = false) {
@@ -174,6 +177,7 @@ class TensorFlowLearnerController(
                 while (executor?.isShutdown == false && countEpochs < numEpochs) {
                     var totalLoss = 0f
                     var totalAccuracy = 0f
+                    var totalValidationLoss = 0f
                     var totalValidationAccuracy = 0f
 
 
@@ -198,11 +202,13 @@ class TensorFlowLearnerController(
                     var numSamplesProcessed = 0
                     samplesProcessor.trainingBatchesIterator(validationSet = true)
                         .forEach { batch ->
-                            val batchAccuracy = validateModel(interpreter!!, batch)
+                            val (batchLoss, batchAccuracy) = validateModel(interpreter!!, batch)
+                            totalValidationLoss += batchLoss
                             totalValidationAccuracy += batchAccuracy
                             numSamplesProcessed++
                         }
                     avgValidationAcc = totalValidationAccuracy / numSamplesProcessed
+                    avgValidationLoss = totalValidationLoss / numSamplesProcessed
 
                     countEpochs++
 
@@ -211,12 +217,17 @@ class TensorFlowLearnerController(
                     if (onlyValidate)
                         Log.d(
                             MODEL_LOG_TAG,
-                            "Epoch: $countEpochs/$numEpochs || Validation Acc $avgValidationAcc/1"
+                            "Epoch: $countEpochs/$numEpochs || " +
+                                    "Validation Acc $avgValidationAcc/1 || " +
+                                    "Validation Loss $avgValidationLoss"
                         )
                     else
                         Log.d(
                             MODEL_LOG_TAG,
-                            "Epoch: $countEpochs/$numEpochs || Samples: Accuracy $avgAccuracy/1  || Loss $avgLoss || Validation Acc $avgValidationAcc/1"
+                            "Epoch: $countEpochs/$numEpochs || Samples:" +
+                                    " Accuracy $avgAccuracy/1  || Loss $avgLoss ||" +
+                                    " Validation Acc $avgValidationAcc/1 ||" +
+                                    " Validation Loss $avgValidationLoss"
                         )
 
 
@@ -352,9 +363,10 @@ class TensorFlowLearnerController(
     private fun validateModel(
         interpreter: Interpreter,
         validationSet: List<TrainingSample>
-    ): Float {
+    ): Pair<Float, Float> {
         var correctPredictions = 0
         var totalSamples = 0
+        var totalLoss = 0.0f
 
         validationSet.forEach { sample ->
             val inputBuffer = ByteBuffer.allocateDirect(IMG_SIZE * IMG_SIZE * 4).apply {
@@ -375,19 +387,35 @@ class TensorFlowLearnerController(
                 "output" to outputProbabilitiesBuffer,
                 "logits" to outputLogitsBuffer
             )
+
             interpreter.runSignature(inputs, outputs, "infer")
+
             outputProbabilitiesBuffer.rewind()
+            outputLogitsBuffer.rewind()
+
             val probabilities = FloatArray(CLASSES)
+            val logits = FloatArray(CLASSES)
+
+
             outputProbabilitiesBuffer.asFloatBuffer().get(probabilities)
+            outputLogitsBuffer.asFloatBuffer().get(logits)
 
             val predictedClass = probabilities.indices.maxByOrNull { probabilities[it] } ?: -1
             if (predictedClass == sample.label) {
                 correctPredictions++
             }
+            val trueLabel = sample.label
+            val loss = -ln(probabilities[trueLabel].toDouble()).toFloat()
+            totalLoss += loss
+
+
             totalSamples++
         }
 
-        return correctPredictions.toFloat() / totalSamples
+        val accuracy = correctPredictions.toFloat() / totalSamples
+        val averageLoss = totalLoss / totalSamples
+
+        return averageLoss to accuracy
     }
 
 

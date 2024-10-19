@@ -184,7 +184,10 @@ class ProxyClient(
     private fun handleValidateMessage(message: NodeOuterClass.EdgeMessage) {
         coroutineScope.launch {
             try {
-                val (loss, accuracy) = learnerController?.validate() ?: Pair(0f, 0f)
+
+                val messageWeights = message.weights
+
+                val (loss, accuracy) = learnerController?.validate(context!!,messageWeights) ?: Pair(0f, 0f)
 
                 val metricsList = listOf("loss", loss.toString(), "accuracy", accuracy.toString())
 
@@ -218,16 +221,18 @@ class ProxyClient(
     private fun handleTrainMessage(message: NodeOuterClass.EdgeMessage) {
         coroutineScope.launch {
             try {
-                val epochs = message.messageList[0].toInt()
-                val (loss, accuracy) = learnerController?.train(epochs) ?: (0.0f to 0.0f)
 
-//                val combinedBytes = ByteBuffer.allocate(8).apply {
-//                    putFloat(loss)
-//                    putFloat(accuracy)
-//                }.array()
+                val messageWeights = message.weights
+                //saveWeights(messageWeights,"recibido_train.ckpt")
+
+                Log.d(GRPC_LOG_TAG, "Starting training")
+                val epochs = message.messageList[0].toInt()
+                val (loss, accuracy) = learnerController?.train(context!!, messageWeights, epochs) ?: (0.0f to 0.0f)
+
 
                 val weights = learnerController?.getWeightsCkpt(context!!)
 
+                Log.d(GRPC_LOG_TAG, "weights sent, size: ${weights?.size()}")
                 Log.d(GRPC_LOG_TAG, "Training completed with loss $loss and accuracy $accuracy")
                 val response = NodeOuterClass.EdgeMessage.newBuilder()
                     .setId(message.id)
@@ -255,32 +260,8 @@ class ProxyClient(
     }
 
     // Variable para acumular el modelo
-    private var modelOutputStream: FileOutputStream? = null
 
-    private fun saveWeights(payload: ByteString) {
-        try {
-            if (modelOutputStream == null) { //first time
-                val outFile = File(context!!.filesDir, CHECKPOINT_FILE_NAME)
-                modelOutputStream = FileOutputStream(outFile)
-                Log.d(GRPC_LOG_TAG, "Chkpt file initialized: ${outFile.absolutePath}")
-            }
 
-            val chunk = payload.toByteArray()
-            modelOutputStream?.write(chunk)
-
-            modelOutputStream?.flush()
-            modelOutputStream?.close()
-            modelOutputStream = null
-
-            this.eventListener?.onLoadingFinished()
-
-            Log.d(GRPC_LOG_TAG, "Model received and saved successfully.")
-
-        } catch (e: Exception) {
-            this.eventListener?.onError("Can't save model")
-            Log.e(GRPC_LOG_TAG, "Error receiving or saving model", e)
-        }
-    }
 
 
     /***************************************************************************/

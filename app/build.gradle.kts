@@ -96,7 +96,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.espresso.remote)
-    implementation(libs.litert)
+    //implementation(libs.litert)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
