@@ -69,7 +69,7 @@ class MasterViewModel : ViewModel() {
     fun initModel() {
         viewModelScope.launch {
             try {
-                grpcClient.initModel()
+                //grpcClient.initModel()
             } catch (e: Exception) {
                 // errors
             }

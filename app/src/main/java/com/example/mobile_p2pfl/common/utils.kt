@@ -11,10 +11,10 @@ import java.nio.ByteBuffer
 
 
 object Constants {
-    const val MODEL_FILE_NAME: String = "mobile_net.tflite"
+    const val MODEL_FILE_NAME: String = "proxy_model_mlp.tflite"
     const val CHECKPOINT_FILE_NAME: String = "proxy_weights.ckpt"
-
 }
+
 object Values {
     val MODEL_LOG_TAG: String = LearningModel::class.java.simpleName
     val GRPC_LOG_TAG: String = ClientGRPC::class.java.simpleName

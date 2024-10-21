@@ -187,7 +187,8 @@ class ProxyClient(
 
                 val messageWeights = message.weights
 
-                val (loss, accuracy) = learnerController?.validate(context!!,messageWeights) ?: Pair(0f, 0f)
+                val (loss, accuracy) = learnerController?.validate(context!!, messageWeights)
+                    ?: Pair(0f, 0f)
 
                 val metricsList = listOf("loss", loss.toString(), "accuracy", accuracy.toString())
 
@@ -227,13 +228,14 @@ class ProxyClient(
 
                 Log.d(GRPC_LOG_TAG, "Starting training")
                 val epochs = message.messageList[0].toInt()
-                val (loss, accuracy) = learnerController?.train(context!!, messageWeights, epochs) ?: (0.0f to 0.0f)
+                val (loss, accuracy) = learnerController?.train(context!!, messageWeights, epochs)
+                    ?: (0.0f to 0.0f)
 
 
+                Log.d(GRPC_LOG_TAG, "Training completed with loss $loss and accuracy $accuracy")
                 val weights = learnerController?.getWeightsCkpt(context!!)
 
                 Log.d(GRPC_LOG_TAG, "weights sent, size: ${weights?.size()}")
-                Log.d(GRPC_LOG_TAG, "Training completed with loss $loss and accuracy $accuracy")
                 val response = NodeOuterClass.EdgeMessage.newBuilder()
                     .setId(message.id)
                     .setCmd("train_response")
@@ -259,12 +261,6 @@ class ProxyClient(
         }
     }
 
-    // Variable para acumular el modelo
-
-
-
-
-    /***************************************************************************/
     /***************************************************************************/
     /***************************************************************************/
     private fun reconnect() {
@@ -293,7 +289,7 @@ class ProxyClient(
 
     /*************************Utilities**************************************************/
 
-// set listener for grpc events
+    // set listener for grpc events
     fun setEventListener(listener: GrpcEventListener) {
         this.eventListener = listener
     }
@@ -318,69 +314,6 @@ class ProxyClient(
                 }
             }
         }
-    }
-
-    /*************************SENDERS**************************************************/
-
-// Send a message Set_model to the server
-    suspend fun sendWeights() {
-        this.eventListener?.onLoadingStarted()
-
-        if (!isRunning.get()) {
-            Log.e(GRPC_LOG_TAG, "Not connected")
-            this.eventListener?.onError("Not connected")
-            return
-        }
-        val file = File(context!!.filesDir, CHECKPOINT_FILE_NAME)
-        if (!file.exists()) {
-            Log.e(GRPC_LOG_TAG, "Weights file not found")
-            this.eventListener?.onError("Weights file not found")
-            return
-        }
-        val weightsData = file.readBytes()
-
-        try {
-            val chunkSize = 1024 * 1024 // 1 MB chunks
-            var offset = 0
-            while (offset < weightsData.size) {
-                val end = minOf(offset + chunkSize, weightsData.size)
-                val chunk = weightsData.slice(offset until end).toByteArray()
-                val isLast = end == weightsData.size
-                val weightChunk = NodeOuterClass.EdgeMessage.newBuilder()
-                    .setId(0) // id de que?
-                    .setCmd("SET_MODEL")
-                    .setCmdBytes(ByteString.copyFrom("SET_MODEL".toByteArray()))
-                    .setWeights(ByteString.copyFrom(chunk))
-                    .setMessage(0, isLast.toString()) // islast en arg[0] o no hace falta?
-                    .build()
-                bidirectionalStream?.onNext(weightChunk)
-                offset = end
-                delay(10)
-            }
-
-        } catch (e: Exception) {
-            bidirectionalStream?.onError(e)
-            this.eventListener?.onError("can't send weights")
-            throw e
-        }
-
-    }
-
-    // Send a message Init_model to the server
-    fun initModel() {
-        this.eventListener?.onLoadingStarted()
-
-        if (!isRunning.get()) {
-            Log.e(GRPC_LOG_TAG, "Not connected")
-            this.eventListener?.onError("Not connected")
-            return
-        }
-        val request = NodeOuterClass.EdgeMessage.newBuilder()
-            .setCmd("INIT_MODEL")
-            .setCmdBytes(ByteString.copyFrom("INIT_MODEL".toByteArray()))
-            .build()
-
-        bidirectionalStream?.onNext(request)
     }
 
 

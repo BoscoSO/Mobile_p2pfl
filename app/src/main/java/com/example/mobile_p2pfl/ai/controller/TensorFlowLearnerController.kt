@@ -268,7 +268,7 @@ class TensorFlowLearnerController(
                     Handler(Looper.getMainLooper()).post {
                         Log.d(MODEL_LOG_TAG, "Training paused")
                         eventListener?.onLoadingFinished()
-                        saveModel()
+                        //saveModel()
                     }
                 }
             }.start()
@@ -284,7 +284,7 @@ class TensorFlowLearnerController(
         val outputs: Map<String, Any> = HashMap()
         interpreter!!.runSignature(inputs, outputs, "save")
         Log.d(MODEL_LOG_TAG, "Model saved")
-        restoreModel()
+        //restoreModel()
     }
 
     // Restore the model from the checkpoint

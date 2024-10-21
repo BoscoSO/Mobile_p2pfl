@@ -60,6 +60,7 @@ class ModelAutoController(
 
                 val res = learner.trainAndWait(numEpochs)
 
+                learner.saveModel()
                 learner.clearAllSamples()
 
                 res
