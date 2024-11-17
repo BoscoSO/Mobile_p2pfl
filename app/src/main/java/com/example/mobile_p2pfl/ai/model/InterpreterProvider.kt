@@ -2,6 +2,7 @@ package com.example.mobile_p2pfl.ai.model
 
 import android.content.Context
 import android.util.Log
+import com.example.mobile_p2pfl.ai.model.InterpreterProviderInterface.Config
 import com.example.mobile_p2pfl.common.Constants.MODEL_FILE_NAME
 import com.example.mobile_p2pfl.common.Device
 import com.example.mobile_p2pfl.common.Values.MODEL_LOG_TAG
@@ -16,7 +17,8 @@ import java.io.FileInputStream
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 
-class InterpreterProvider(private val context: Context, device: Device = Device.CPU) {
+class InterpreterProvider(private val context: Context, device: Device = Device.CPU) :
+    InterpreterProviderInterface {
 
     /********************************DELEGATE*************************************************/
     private val delegate: Delegate? = when (device) {
@@ -24,6 +26,7 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
         Device.NNAPI -> getNnApiDelegate()
         Device.GPU -> getGpuDelegate()
     }
+
     private fun getNnApiDelegate(): Delegate? {
         return try {
             val options = NnApiDelegate.Options().apply {
@@ -38,13 +41,17 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
             null
         }
     }
+
     private fun getGpuDelegate(): Delegate? {
         val compatList = CompatibilityList()
         return if (compatList.isDelegateSupportedOnThisDevice) {
             try {
                 GpuDelegate(compatList.bestOptionsForThisDevice)
             } catch (e: Exception) {
-                Log.w(MODEL_LOG_TAG, "InterpreterProvider: GPU Delegate not supported: ${e.message}")
+                Log.w(
+                    MODEL_LOG_TAG,
+                    "InterpreterProvider: GPU Delegate not supported: ${e.message}"
+                )
                 null
             }
         } else {
@@ -65,12 +72,12 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
         interpreter = createInterpreter()
     }
 
-    fun isModelInitialized(): Boolean {
+    override fun isModelInitialized(): Boolean {
         return isModelInitialized
     }
 
-    fun setNumberOfThreads(numThreads: Int): Boolean {
-        if(numThreads == numThreadsOp && interpreter != null)
+    override fun setNumberOfThreads(numThreads: Int): Boolean {
+        if (numThreads == numThreadsOp && interpreter != null)
             return false
         numThreadsOp = numThreads
         interpreter = createInterpreter()
@@ -79,7 +86,7 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
 
     /************************INTERPRETER MANAGER**********************************************/
     // Return interpreter
-    fun getInterpreter(): Interpreter? {
+    override fun getInterpreter(): Interpreter? {
         if (interpreter == null) {
             interpreter = createInterpreter()
         }
@@ -102,7 +109,10 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
             return interpreter
         } catch (e: Exception) {
             isModelInitialized = false
-            Log.e(MODEL_LOG_TAG, "InterpreterProvider: Error creating interpreter: ${e.printStackTrace()}")
+            Log.e(
+                MODEL_LOG_TAG,
+                "InterpreterProvider: Error creating interpreter: ${e.printStackTrace()}"
+            )
             return null
         }
     }
@@ -120,14 +130,9 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
 
     /*******************************CONFIG****************************************************/
 
-    enum class Config(val signature: String, val batchSize: Int) {
-        XS("train_fixed_batch_xs", 8),
-        S("train_fixed_batch_s", 16),
-        M("train_fixed_batch_m", 32),
-        L("train_fixed_batch_l", 64)
-    }
 
-    fun getOptimalConfigFor(samplesSize: Int): Config =
+
+    override fun getOptimalConfigFor(samplesSize: Int): Config =
         when {
             samplesSize <= 32 -> Config.XS
             samplesSize <= 64 -> Config.S

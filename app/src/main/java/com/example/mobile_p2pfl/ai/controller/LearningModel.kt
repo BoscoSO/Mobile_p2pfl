@@ -9,6 +9,7 @@ import android.widget.ArrayAdapter
 import com.example.mobile_p2pfl.ai.LearningModelController
 import com.example.mobile_p2pfl.ai.conversor.SamplesProcessor
 import com.example.mobile_p2pfl.ai.model.InterpreterProvider
+import com.example.mobile_p2pfl.ai.model.InterpreterProviderInterface
 import com.example.mobile_p2pfl.common.Constants.CHECKPOINT_FILE_NAME
 import com.example.mobile_p2pfl.common.LearningModelEventListener
 import com.example.mobile_p2pfl.common.Recognition
@@ -255,7 +256,7 @@ class LearningModel(
     // Process a batch of training samples.
     private fun processBatchTensors(
         interpreter: Interpreter,
-        config: InterpreterProvider.Config,
+        config: InterpreterProviderInterface.Config,
         batch: List<TrainingSample>
     ): Pair<Float, Float> {
         val batchSize = batch.size

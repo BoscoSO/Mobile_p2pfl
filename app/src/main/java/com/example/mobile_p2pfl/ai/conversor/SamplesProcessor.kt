@@ -22,7 +22,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 
-class SamplesProcessor {
+class SamplesProcessor:SamplesProcessorInterface {
 
     private val samples = mutableListOf<TrainingSample>()
 
@@ -33,14 +33,14 @@ class SamplesProcessor {
         .add(NormalizeOp(0f, 255f))
         .build()
 
-    fun getProcessedImage(bitmap: Bitmap): TensorImage {
+    override fun getProcessedImage(bitmap: Bitmap): TensorImage {
         val tensorImage = TensorImage.fromBitmap(bitmap)
         return imageProcessor.process(tensorImage)
     }
 
     /*********************************SAMPLES MANAGER************************************************/
 
-    fun addSample(bitmap: Bitmap, label: Int) {
+    override fun addSample(bitmap: Bitmap, label: Int) {
         val tensorImage = TensorImage.fromBitmap(bitmap)
         val processedTensorImage = imageProcessor.process(tensorImage)
 
@@ -48,15 +48,15 @@ class SamplesProcessor {
         samples.shuffle()
     }
 
-    fun clearSamples() {
+    override fun clearSamples() {
         samples.clear()
     }
 
-    fun samplesSize(): Int = samples.size
+    override fun samplesSize(): Int = samples.size
 
     /*********************************SAVE AND LOAD************************************************/
 
-    fun saveSamplesToInternalStorage(context: Context, title: String) {
+    override fun saveSamplesToInternalStorage(context: Context, title: String) {
         val directory = File(context.filesDir, "saved_samples")
         if (!directory.exists()) {
             directory.mkdirs()
@@ -73,7 +73,7 @@ class SamplesProcessor {
         }
     }
 
-    fun loadSamplesFromInternalStorage(context: Context, title: String) {
+    override fun loadSamplesFromInternalStorage(context: Context, title: String) {
         val directory = File(context.filesDir, "saved_samples")
         val file = File(directory, title)
         val samples = mutableListOf<TrainingSample>()
@@ -99,7 +99,7 @@ class SamplesProcessor {
         this.samples.addAll(samples)
     }
 
-    fun listSavedSamples(context: Context): List<String> {
+    override fun listSavedSamples(context: Context): List<String> {
         val directory = File(context.filesDir, "saved_samples")
         val fileNames =
             if (directory.exists() && directory.isDirectory) {
@@ -158,9 +158,9 @@ class SamplesProcessor {
     }
 
     /********************************ITERATOR*************************************************/
-    fun trainingBatchesIterator(
-        trainBatchSize: Int = 1,
-        validationSet: Boolean = false
+    override fun trainingBatchesIterator(
+        trainBatchSize: Int,
+        validationSet: Boolean
     ): Iterator<List<TrainingSample>> {
 
         val trainingSamples = getAugmentedSamples()

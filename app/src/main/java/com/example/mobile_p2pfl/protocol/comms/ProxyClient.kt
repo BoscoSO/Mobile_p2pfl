@@ -49,8 +49,8 @@ class ProxyClient(
 ) {
 
     companion object {
-//                        private const val HOST: String = "172.30.231.18"
-        //private const val HOST: String = "127.0.0.1"
+//        private const val HOST: String = "172.30.231.18"
+//        private const val HOST: String = "127.0.0.1"
 
         private const val HOST: String = "192.168.1.128"// por wifi
         private const val PORT: Int = 50051
@@ -71,14 +71,6 @@ class ProxyClient(
 
     private var asyncStub = NodeGrpc.newStub(channel)
 
-    private val clientId = UUID.randomUUID().toString()
-    private var sessionId: String? = null
-
-
-    /***********************Testing async Proxy_Node********************************************/
-//    private val _messageFlow = MutableSharedFlow<Node.Message>()
-//    val messageFlow = _messageFlow.asSharedFlow()
-//    private val sendChannel = Channel<Node.Message>()
 
     private var bidirectionalStream: StreamObserver<NodeOuterClass.EdgeMessage>? = null
     private val isRunning = AtomicBoolean(false)
@@ -89,7 +81,6 @@ class ProxyClient(
     init {
         monitorConnectionState()
     }
-
 
     private fun monitorConnectionState() {
         coroutineScope.launch {

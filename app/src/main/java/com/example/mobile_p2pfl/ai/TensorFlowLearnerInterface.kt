@@ -7,9 +7,6 @@ import com.example.mobile_p2pfl.common.Recognition
 import java.io.Closeable
 
 interface TensorFlowLearnerInterface : Closeable {
-    data class ValidationResults(
-        val accuracy: Float
-    )
 
     fun classify(image: Bitmap): Recognition
 
