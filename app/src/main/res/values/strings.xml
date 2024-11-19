@@ -62,5 +62,11 @@
     <string name="default_epochs">5</string>
     <string name="btn_less_epochs">reduce epochs in one</string>
     <string name="btn_add_epochs">increment epochs in one</string>
+    <string name="lbl_participate">Participate in training</string>
+    <string name="none">None</string>
+    <string name="instruction_received">Instruction received:</string>
+    <string name="processing_instructions">Processing instructions...</string>
+    <string name="waiting_for_instructions">Waiting for instructions...</string>
+    <string name="nothing_to_process">Nothing to process</string>
 
 </resources>

@@ -3,6 +3,7 @@ package com.example.mobile_p2pfl.ai.controller
 import android.content.Context
 import android.util.Log
 import com.example.mobile_p2pfl.common.Constants.CHECKPOINT_FILE_NAME
+import com.example.mobile_p2pfl.common.GrpcEventListener
 import com.example.mobile_p2pfl.common.Values.GRPC_LOG_TAG
 import com.example.mobile_p2pfl.common.Values.MODEL_LOG_TAG
 import com.google.protobuf.ByteString
@@ -17,30 +18,27 @@ class ModelAutoController(
     private val learner: TensorFlowLearnerController
 ) {
 
-
-    /*****************VARIABLES*********************/
-
-    /*****************SETUP*********************/
-
-    init {
-
-    }
-
-
-    suspend fun validate(context: Context, messageWeights: ByteString): Pair<Float, Float> {
+    suspend fun validate(context: Context, eventListener: GrpcEventListener, messageWeights: ByteString): Pair<Float, Float> {
         return withContext(Dispatchers.Default) {
             try {
+                eventListener.updateStep("Saving weights...")
                 saveWeights(context, messageWeights)
 
+                eventListener.updateStep("Loading samples...")
                 if (!learner.listSavedSamplesAdapter().isEmpty) {
                     learner.loadSavedSamples("samples_set.dat")
                 }
+
+                eventListener.updateStep("Loading model...")
                 learner.restoreModel()
 
+                eventListener.updateStep("Validating...")
                 val res = learner.validate()
 
-                learner.clearAllSamples()
+                eventListener.updateResults("Validation results", res.first, res.second)
+                eventListener.updateStep("Sending Result")
 
+                learner.clearAllSamples()
                 res
             } catch (e: Exception) {
                 0.0f to 0.0f
@@ -48,18 +46,25 @@ class ModelAutoController(
         }
     }
 
-    suspend fun train(context: Context, messageWeights: ByteString, numEpochs: Int):  Pair<Float, Float> {
+    suspend fun train(context: Context, eventListener: GrpcEventListener, messageWeights: ByteString, numEpochs: Int):  Pair<Float, Float> {
         return withContext(Dispatchers.Default) {
             try {
+                eventListener.updateStep("Saving weights...")
                 saveWeights(context,messageWeights)
 
+                eventListener.updateStep("Loading samples...")
                 if (!learner.listSavedSamplesAdapter().isEmpty) {
                     learner.loadSavedSamples("samples_set.dat")
                 }
+                eventListener.updateStep("Loading model...")
                 learner.restoreModel()
 
-                val res = learner.trainAndWait(numEpochs)
+                eventListener.updateStep("Training $numEpochs epochs...")
+                val res = learner.trainAndWait(numEpochs,eventListener)
 
+
+                eventListener.updateResults("Training results", res.first, res.second)
+                eventListener.updateStep("Saving and sending back...")
                 learner.saveModel()
                 learner.clearAllSamples()
 

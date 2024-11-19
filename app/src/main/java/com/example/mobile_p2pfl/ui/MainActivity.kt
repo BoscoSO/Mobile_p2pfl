@@ -40,19 +40,18 @@ class MainActivity : AppCompatActivity() {
         init()
     }
 
-    private fun init(){
+    private fun init() {
 
         masterViewModel = ViewModelProvider(this)[MasterViewModel::class.java]
 
-        masterViewModel.initializeConnection(this)//, ViewModelProvider(this)[ConnectionViewModel::class.java])
 
-        masterViewModel.initializeModelController(binding.root.context,2)
+        masterViewModel.initializeModelController(binding.root.context, 2)
 
-        copySamplesSetToInternal()
+        copyAssetsToInternal()
     }
 
 
-    private fun copySamplesSetToInternal() {
+    private fun copyAssetsToInternal() {
 
         val directory = File(filesDir, "saved_samples")
         if (!directory.exists()) {
@@ -60,7 +59,6 @@ class MainActivity : AppCompatActivity() {
         }
         val assetName = "samples_set.dat"
         val file = File(directory, "samples_set.dat")
-
 
         if (!file.exists()) {
             try {
@@ -73,10 +71,28 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.e("FileOperation", "Error al copiar samples_set.dat: ${e.message}")
             }
-        } else {
-            Log.d("FileOperation", "samples_set.dat ya existe en la memoria interna")
+        }
+
+
+        val modelFile = File(filesDir, "proxy_model_mlp.tflite")
+        if (!modelFile.exists()) {
+            try {
+                assets.open("proxy_model_mlp.tflite").use { input ->
+                    modelFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+
+                }
+                Log.d(
+                    "FileOperation",
+                    "proxy_model_mlp.tflite copiado exitosamente a la memoria interna"
+                )
+            } catch (e: Exception) {
+                Log.e("FileOperation", "Error al copiar proxy_model_mlp.tflite: ${e.message}")
+            }
         }
     }
+
     override fun onDestroy() {
         super.onDestroy()
 

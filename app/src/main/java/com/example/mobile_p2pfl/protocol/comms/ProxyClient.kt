@@ -2,16 +2,12 @@ package com.example.mobile_p2pfl.protocol.comms
 
 import android.content.Context
 import android.util.Log
-import com.example.mobile_p2pfl.ai.TensorFlowLearnerInterface
-import com.example.mobile_p2pfl.ai.controller.LearningModel
 import com.example.mobile_p2pfl.ai.controller.ModelAutoController
 import com.example.mobile_p2pfl.ai.controller.TensorFlowLearnerController
-import com.example.mobile_p2pfl.common.Constants.CHECKPOINT_FILE_NAME
-import com.example.mobile_p2pfl.common.Constants.MODEL_FILE_NAME
+import com.example.mobile_p2pfl.common.GrpcConnectionListener
 import com.example.mobile_p2pfl.common.GrpcEventListener
 import com.example.mobile_p2pfl.common.Values.GRPC_LOG_TAG
-import com.google.protobuf.ByteString
-import com.google.protobuf.Empty
+import com.example.mobile_p2pfl.protocol.messages.CommandsHandler
 import edge_node.NodeGrpc
 import edge_node.NodeOuterClass
 import io.grpc.CallOptions
@@ -28,40 +24,24 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asExecutor
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileOutputStream
-import java.nio.ByteBuffer
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.random.Random
 
-class ProxyClient(
-    private val context: Context? = null
-) {
+class ProxyClient(private val conectionListener : GrpcConnectionListener) {
 
     companion object {
-//        private const val HOST: String = "172.30.231.18"
-//        private const val HOST: String = "127.0.0.1"
+//        private const val HOST: String = "172.30.231.18" // Local
 
-        private const val HOST: String = "192.168.1.128"// por wifi
+        private const val HOST: String = "192.168.1.129" // ipv4 ethernet
         private const val PORT: Int = 50051
-        private const val MAX_MESSAGE_SIZE = 4 * 1024 * 1024 // 4 MB
-
         private const val MAX_RETRY_DELAY = 32000L // 32 seconds
     }
 
-    private val channel: ManagedChannel = ManagedChannelBuilder.forAddress(HOST, PORT)
+    private var channel: ManagedChannel = ManagedChannelBuilder.forAddress(HOST, PORT)
         .usePlaintext()
-        // .maxInboundMessageSize(MAX_MESSAGE_SIZE)
         .keepAliveTime(30, TimeUnit.SECONDS)
         .keepAliveTimeout(10, TimeUnit.SECONDS)
         .executor(Dispatchers.IO.asExecutor())
@@ -70,24 +50,25 @@ class ProxyClient(
 
 
     private var asyncStub = NodeGrpc.newStub(channel)
-
-
     private var bidirectionalStream: StreamObserver<NodeOuterClass.EdgeMessage>? = null
-    private val isRunning = AtomicBoolean(false)
-    private var eventListener: GrpcEventListener? = null
 
     private val coroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val isRunning = AtomicBoolean(false)
+
+    private var commandsHandler: CommandsHandler? = null
+
 
     init {
         monitorConnectionState()
     }
 
+   // Monitor the connection state
     private fun monitorConnectionState() {
         coroutineScope.launch {
             while (isActive) {
                 channel.notifyWhenStateChanged(ConnectivityState.READY) {
                     if (channel.getState(false) == ConnectivityState.TRANSIENT_FAILURE) {
-                        reconnect()
+                        conectionListener.disconected()
                     }
                 }
                 delay(5000) // Check every 5 seconds
@@ -95,184 +76,48 @@ class ProxyClient(
         }
     }
 
-    fun startMainStream() {
+    fun connect() {
+        channel = ManagedChannelBuilder.forAddress(HOST, PORT)
+            .usePlaintext()
+            .keepAliveTime(30, TimeUnit.SECONDS)
+            .keepAliveTimeout(10, TimeUnit.SECONDS)
+            .executor(Dispatchers.IO.asExecutor())
+            .intercept(LoggingInterceptor())
+            .build()
 
-        mainStream()
+        asyncStub = NodeGrpc.newStub(channel)
     }
 
     // Start the bidirectional stream with the server
-    private fun mainStream() {
+    fun mainStream() {
         isRunning.set(true)
+        commandsHandler?.init()
 
         bidirectionalStream =
             asyncStub?.mainStream(object : StreamObserver<NodeOuterClass.EdgeMessage> {
 
                 override fun onNext(message: NodeOuterClass.EdgeMessage) {
-                    when (message.cmd) {
-                        "vote" -> {
-                            Log.d(GRPC_LOG_TAG, "Received vote message")
-                            handleVoteMessage(message)
-                        }
-
-                        "validate" -> {
-                            Log.d(GRPC_LOG_TAG, "Received validate message")
-                            handleValidateMessage(message)
-                        }
-
-                        "train" -> {
-                            Log.d(GRPC_LOG_TAG, "Received train message")
-                            handleTrainMessage(message)
-                        }
-
-                        else -> Log.d(GRPC_LOG_TAG, "Received message: ${message.cmd}")
+                    CoroutineScope(Dispatchers.Main).launch {
+                        val response = commandsHandler?.handleCommands(message)?.await()
+                        bidirectionalStream?.onNext(response)
                     }
                 }
 
                 override fun onError(t: Throwable) {
                     isRunning.set(false)
-                    Log.e(GRPC_LOG_TAG, "Stream error: ${t.message}")
-                    eventListener?.onError("END")
+                    commandsHandler?.notifyError("Stream error: ${t.message}")
                 }
 
                 override fun onCompleted() {
-                    Log.d(GRPC_LOG_TAG, "Stream completed")
+                    commandsHandler?.notifyEnd()
                     isRunning.set(false)
                 }
             })
 
     }
 
-    /*************************HANDLERS**************************************************/
-
-    //    private val learner : LearningModel = LearningModel(context!!)
-    private fun handleVoteMessage(message: NodeOuterClass.EdgeMessage) {
-        val candidates = message.messageList
-
-        // Gen vote
-        val TRAIN_SET_SIZE = 4
-        val samples = minOf(TRAIN_SET_SIZE, candidates.size)
-        val nodesVoted = candidates.shuffled().take(samples)
-        val weights = List(samples) { i ->
-            (Random.nextInt(1001) / (i + 1)).toInt()
-        }
-        val response = NodeOuterClass.EdgeMessage.newBuilder()
-            .setId(message.id)
-            .setCmd("vote_response")
-            .addAllMessage(nodesVoted) // Añade los nodos votados
-            .addAllMessage(weights.map { it.toString() }) // Añade los pesos como strings
-            .build()
-
-        bidirectionalStream?.onNext(response)
-    }
-
-
-    private var learnerController: ModelAutoController? = null
-    fun setLearner(learner: TensorFlowLearnerController) {
-        this.learnerController = ModelAutoController(learner)
-    }
-
-
-    private fun handleValidateMessage(message: NodeOuterClass.EdgeMessage) {
-        coroutineScope.launch {
-            try {
-
-                val messageWeights = message.weights
-
-                val (loss, accuracy) = learnerController?.validate(context!!, messageWeights)
-                    ?: Pair(0f, 0f)
-
-                val metricsList = listOf("loss", loss.toString(), "accuracy", accuracy.toString())
-
-                Log.d(GRPC_LOG_TAG, "Validation results: loss=$loss, accuracy=$accuracy")
-
-                val response = NodeOuterClass.EdgeMessage.newBuilder()
-                    .setId(message.id)
-                    .setCmd("validate_response")
-                    .addAllMessage(metricsList)
-                    .build()
-
-                withContext(Dispatchers.Main) {
-                    bidirectionalStream?.onNext(response)
-                }
-            } catch (e: Exception) {
-                // Manejar el error, enviando una respuesta de error
-                Log.e(GRPC_LOG_TAG, "Validation failed: ${e.message}")
-                val errorResponse = NodeOuterClass.EdgeMessage.newBuilder()
-                    .setId(message.id)
-                    .setCmd("validate_response")
-                    .setMessage(0, "Validation failed: ${e.message}")
-                    .build()
-
-                withContext(Dispatchers.Main) {
-                    bidirectionalStream?.onNext(errorResponse)
-                }
-            }
-        }
-    }
-
-    private fun handleTrainMessage(message: NodeOuterClass.EdgeMessage) {
-        coroutineScope.launch {
-            try {
-
-                val messageWeights = message.weights
-                //saveWeights(messageWeights,"recibido_train.ckpt")
-
-                Log.d(GRPC_LOG_TAG, "Starting training")
-                val epochs = message.messageList[0].toInt()
-                val (loss, accuracy) = learnerController?.train(context!!, messageWeights, epochs)
-                    ?: (0.0f to 0.0f)
-
-
-                Log.d(GRPC_LOG_TAG, "Training completed with loss $loss and accuracy $accuracy")
-                val weights = learnerController?.getWeightsCkpt(context!!)
-
-                Log.d(GRPC_LOG_TAG, "weights sent, size: ${weights?.size()}")
-                val response = NodeOuterClass.EdgeMessage.newBuilder()
-                    .setId(message.id)
-                    .setCmd("train_response")
-                    .setWeights(weights)
-                    .build()
-
-                withContext(Dispatchers.Main) {
-                    bidirectionalStream?.onNext(response)
-                }
-
-            } catch (e: Exception) {
-                Log.e(GRPC_LOG_TAG, "Training failed: ${e.message}")
-                val errorResponse = NodeOuterClass.EdgeMessage.newBuilder()
-                    .setId(message.id)
-                    .setCmd("train_response")
-                    .setMessage(0, "Training failed: ${e.message}")
-                    .build()
-
-                withContext(Dispatchers.Main) {
-                    bidirectionalStream?.onNext(errorResponse)
-                }
-            }
-        }
-    }
-
-    /***************************************************************************/
-    /***************************************************************************/
-    private fun reconnect() {
-        coroutineScope.launch {
-            var retryDelay = 1000L
-            while (!isRunning.get() && retryDelay <= MAX_RETRY_DELAY) {
-                try {
-                    delay(retryDelay)
-                    mainStream()
-                    break
-                } catch (e: Exception) {
-                    Log.e(GRPC_LOG_TAG, "Reconnection failed: ${e.message}")
-                    retryDelay *= 2
-                }
-            }
-        }
-    }
-
     // Close the client channel
     fun closeClient(): Boolean {
-        coroutineScope.cancel()
         if (!channel.isShutdown)
             channel.shutdown().awaitTermination(5, TimeUnit.SECONDS)
         return true
@@ -280,9 +125,19 @@ class ProxyClient(
 
     /*************************Utilities**************************************************/
 
-    // set listener for grpc events
-    fun setEventListener(listener: GrpcEventListener) {
-        this.eventListener = listener
+
+    // set commands handler
+    fun setCommandsHandler(
+        context: Context,
+        learnerController: TensorFlowLearnerController,
+        eventListener: GrpcEventListener
+    ) {
+        this.commandsHandler = CommandsHandler(
+            context,
+            ModelAutoController(learnerController),
+            eventListener,
+            coroutineScope
+        )
     }
 
     // Check if the client is connected to the server

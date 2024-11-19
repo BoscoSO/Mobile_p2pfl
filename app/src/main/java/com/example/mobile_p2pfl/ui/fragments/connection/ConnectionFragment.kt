@@ -35,24 +35,6 @@ class ConnectionFragment : Fragment() {
 
     private lateinit var masterViewModel: MasterViewModel
     private lateinit var connectionViewModel: ConnectionViewModel
-    private val loadingListener = object : GrpcEventListener {
-        override fun onLoadingStarted() {
-            connectionViewModel.setInfo("Waiting for response...")
-            connectionViewModel.startLoading()
-        }
-
-        override fun onLoadingFinished() {
-            connectionViewModel.setInfo("Done")
-            connectionViewModel.stopLoading()
-        }
-
-        override fun onError(message: String) {
-            connectionViewModel.setError(message)
-            connectionViewModel.stopLoading()
-            if(message == "END")
-                masterViewModel._connectionState.postValue(ConnectionState.DISCONNECTED)
-        }
-    }
 
 
     override fun onCreateView(
@@ -69,6 +51,37 @@ class ConnectionFragment : Fragment() {
         masterViewModel.connectionState.observe(viewLifecycleOwner) { state ->
             updateConnectionIcon(state)
         }
+
+
+        initView()
+        initInfoView()
+        return binding.root
+    }
+
+
+    private fun updateConnectionIcon(state: ConnectionState) {
+        when (state) {
+            ConnectionState.DISCONNECTED -> {
+                connectionViewModel.setError("Disconected")
+                binding.lyAnimationOn.visibility = View.INVISIBLE
+                binding.lyAnimationOff.visibility = View.VISIBLE
+                startPulseOff()
+            }
+
+            ConnectionState.CONNECTING -> {
+                connectionViewModel.setInfo("Connecting...")
+                startPulseOn()
+            }
+
+            ConnectionState.CONNECTED -> {
+                connectionViewModel.setInfo("Connected")
+                binding.lyAnimationOn.visibility = View.VISIBLE
+                binding.lyAnimationOff.visibility = View.INVISIBLE
+            }
+        }
+    }
+
+    private fun initView() {
 
         connectionViewModel.info.observe(viewLifecycleOwner) { info ->
             binding.tvInfoMsg.text = info
@@ -94,83 +107,10 @@ class ConnectionFragment : Fragment() {
             else
                 binding.sendProgressBar.visibility = View.INVISIBLE
         }
-
-        initView()
-
-        return binding.root
-    }
-
-
-    private fun updateConnectionIcon(state: ConnectionState) {
-        when (state) {
-            ConnectionState.DISCONNECTED -> {
-                connectionViewModel.setError("Disconected")
-                binding.lyAnimationOn.visibility = View.INVISIBLE
-                binding.lyAnimationOff.visibility = View.VISIBLE
-                startPulseOff()
-            }
-
-            ConnectionState.CONNECTING -> {
-                connectionViewModel.setInfo("Connecting...")
-                startPulseOn() // cambiar esto por una animación de carga
-            }
-
-            ConnectionState.CONNECTED -> {
-                connectionViewModel.setInfo("Connected")
-                binding.lyAnimationOn.visibility = View.VISIBLE
-                binding.lyAnimationOff.visibility = View.INVISIBLE
-            }
+        binding.btnConnect.setOnClickListener {
+            startPulseOff()
+            masterViewModel.connect(binding.root.context, connectionViewModel.grpcListener)
         }
-    }
-
-    private fun initView() {
-
-        binding.btnFetchModel.setOnClickListener {
-            if (connectionViewModel.sendLoading.value == true)
-                Toast.makeText(
-                    binding.root.context,
-                    "Wait for the last request to finish",
-                    Toast.LENGTH_SHORT
-                ).show()
-            else  masterViewModel.initModel()
-
-//                CoroutineScope(Dispatchers.IO).launch {
-//                masterViewModel.grpcClient.getModel(binding.root.context)
-//                //masterViewModel.grpcClient.fetchModel(binding.root.context)
-//                //masterViewModel.initializeModelController(binding.root.context,2)
-//                }
-
-        }
-        binding.btnSendModel.setOnClickListener {
-            if (connectionViewModel.sendLoading.value == true)
-                Toast.makeText(
-                    binding.root.context,
-                    "Wait for the last request to finish",
-                    Toast.LENGTH_SHORT
-                ).show()
-            else masterViewModel.sendWeights()
-
-//                CoroutineScope(Dispatchers.IO).launch {
-//                masterViewModel.grpcClient.sendWeights(binding.root.context)
-////                masterViewModel.grpcClient.sendModel(
-////                    binding.root.context,
-////                    object : StreamObserver<ResponseMessage> {
-////
-////                        override fun onNext(value: ResponseMessage) {
-////                            Log.i(GRPC_LOG_TAG, "Async Response: " + value.error)
-////                        }
-////
-////                        override fun onError(t: Throwable) {
-////                            Log.e(GRPC_LOG_TAG, "Error in async call: " + t.message)
-////                        }
-////
-////                        override fun onCompleted() {
-////                            Log.i(GRPC_LOG_TAG, "Async call completed")
-////                        }
-////                    })
-//                }
-        }
-
         binding.btnDisconnect.setOnClickListener {
             if (connectionViewModel.sendLoading.value == true)
                 Toast.makeText(
@@ -180,12 +120,73 @@ class ConnectionFragment : Fragment() {
                 ).show()
             else masterViewModel.disconnect()
         }
-        binding.btnConnect.setOnClickListener {
-            startPulseOff()
-            masterViewModel.connect(loadingListener)
+    }
+
+
+    private fun initInfoView() {
+
+        connectionViewModel.streamError.observe(viewLifecycleOwner){error->
+            binding.tvStreamError.text = error
+        }
+        connectionViewModel.infoInstruction.observe(viewLifecycleOwner) { instruction ->
+            binding.tvInfoInstruction.text = instruction
+            binding.lyInfoSteps.visibility = View.GONE
+            binding.lyInfoResults.visibility = View.GONE
+        }
+        connectionViewModel.infoStep.observe(viewLifecycleOwner) { step ->
+            binding.infoTextProgress.text = step
+            binding.lyInfoSteps.visibility = View.VISIBLE
+        }
+        connectionViewModel.infoResultLbl.observe(viewLifecycleOwner) { resultLbl ->
+            binding.tvInfoResultsLbl.text = resultLbl
+            binding.lyInfoResults.visibility = View.VISIBLE
+        }
+        connectionViewModel.infoLoss.observe(viewLifecycleOwner) { loss ->
+            binding.tvTrainLossOut.text = loss.toString()
+        }
+        connectionViewModel.infoAccuracy.observe(viewLifecycleOwner) { accuracy ->
+            binding.tvTrainAccOut.text = accuracy.toString()
+        }
+        connectionViewModel.infoProgress.observe(viewLifecycleOwner) { progress ->
+            binding.loadingTraining.progress = progress!!.toInt()
+        }
+        connectionViewModel.checkIcon.observe(viewLifecycleOwner) { check ->
+            if (check) {
+                binding.serverProgress.visibility = View.INVISIBLE
+                binding.ivInfoCheck.visibility = View.VISIBLE
+            } else {
+                binding.serverProgress.visibility = View.VISIBLE
+                binding.ivInfoCheck.visibility = View.INVISIBLE
+            }
+        }
+        connectionViewModel.waitingInstructions.observe(viewLifecycleOwner) { waiting ->
+            if (waiting) {
+                binding.tvInfoProcessing.visibility = View.GONE
+                binding.tvInfoWaiting.visibility = View.VISIBLE
+                binding.tvInfoNone.visibility = View.GONE
+            } else {
+                binding.tvInfoProcessing.visibility = View.VISIBLE
+                binding.tvInfoWaiting.visibility = View.GONE
+                binding.tvInfoNone.visibility = View.GONE
+            }
+        }
+
+        connectionViewModel.startFL.observe(viewLifecycleOwner) { start ->
+            if (start) {
+                binding.serverProgress.visibility = View.VISIBLE
+            }else{
+                binding.serverProgress.visibility = View.INVISIBLE
+                binding.tvInfoNone.visibility = View.VISIBLE
+                binding.tvInfoWaiting.visibility = View.GONE
+                binding.tvInfoProcessing.visibility = View.GONE
+                binding.lyInfoSteps.visibility = View.GONE
+                binding.lyInfoResults.visibility = View.GONE
+            }
         }
 
     }
+
+
 
     private fun startPulseOn() {
         binding.ivAnimationPulse.startAnimation(
@@ -195,6 +196,7 @@ class ConnectionFragment : Fragment() {
             AnimationUtils.loadAnimation(binding.root.context, pulse2_button)
         )
     }
+
     private fun startPulseOff() {
         binding.ivAnimationPulseOff.startAnimation(
             AnimationUtils.loadAnimation(binding.root.context, pulse_button)

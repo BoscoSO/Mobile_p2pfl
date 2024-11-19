@@ -87,8 +87,18 @@ interface LearningModelEventListener {
     fun onError(message: String)
 }
 
+
+interface GrpcConnectionListener {
+    fun conected()
+    fun disconected()
+}
 interface GrpcEventListener {
-    fun onLoadingStarted()
-    fun onLoadingFinished()
+    fun startFederatedTraining()
+    fun startInstruction(instruction: String)
+    fun updateStep(message: String)
+    fun updateResults(message:String, loss: Float, accuracy: Float)
+    fun updateProgress(progress: Float)
+    fun endInstruction()
+    fun endFederatedTraining()
     fun onError(message: String)
 }

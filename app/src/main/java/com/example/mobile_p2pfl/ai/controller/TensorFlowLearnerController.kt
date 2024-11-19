@@ -12,6 +12,7 @@ import com.example.mobile_p2pfl.ai.conversor.SamplesProcessor
 import com.example.mobile_p2pfl.ai.model.InterpreterProvider
 import com.example.mobile_p2pfl.ai.model.InterpreterProviderInterface
 import com.example.mobile_p2pfl.common.Constants.CHECKPOINT_FILE_NAME
+import com.example.mobile_p2pfl.common.GrpcEventListener
 import com.example.mobile_p2pfl.common.LearningModelEventListener
 import com.example.mobile_p2pfl.common.Recognition
 import com.example.mobile_p2pfl.common.TrainingSample
@@ -128,10 +129,20 @@ class TensorFlowLearnerController(
         }
     }
 
-    suspend fun trainAndWait(numEpochs: Int): Pair<Float, Float> {
+    suspend fun trainAndWait(
+        numEpochs: Int,
+        grpcEventListener: GrpcEventListener
+    ): Pair<Float, Float> {
         return withContext(Dispatchers.Default) {
             startTraining(numEpochs)
+
             while (executor?.isShutdown == false) {
+                grpcEventListener.updateResults(
+                    "Training Results at epoch $epochPointer",
+                    avgLoss,
+                    avgAccuracy
+                )
+                grpcEventListener.updateProgress(progress)
                 delay(100)
             }
 
@@ -147,6 +158,8 @@ class TensorFlowLearnerController(
     private var avgAccuracy = 0f
     private var avgValidationAcc = 0.0f
     private var avgValidationLoss = 0.0f
+    private var progress = 0.0f
+    private var epochPointer = 0
 
     // Start the training process.
     private fun startTraining(numEpochs: Int, onlyValidate: Boolean = false) {
@@ -174,14 +187,16 @@ class TensorFlowLearnerController(
 
         executor?.execute {
             synchronized(lock) {
-                var countEpochs = 0
-                while (executor?.isShutdown == false && countEpochs < numEpochs) {
+                epochPointer = 0
+                val totalSamples = (samplesProcessor.samplesSize() * 3 * 0.8).toInt()
+                while (executor?.isShutdown == false && epochPointer < numEpochs) {
                     var totalLoss = 0f
                     var totalAccuracy = 0f
                     var totalValidationLoss = 0f
                     var totalValidationAccuracy = 0f
 
-
+                    var totalSamplesProcessed = 0
+                    epochPointer++
                     /******************************TRAINING*********************************/
                     if (!onlyValidate) {
                         var numBatchesProcessed = 0
@@ -195,6 +210,14 @@ class TensorFlowLearnerController(
                                 totalLoss += batchLoss
                                 totalAccuracy += batchAccuracy
                                 numBatchesProcessed++
+                                totalSamplesProcessed += batch.size
+
+                                progress = calculateProgress(
+                                    epochPointer,
+                                    numEpochs,
+                                    totalSamplesProcessed,
+                                    totalSamples
+                                )
                             }
                         avgLoss = totalLoss / numBatchesProcessed
                         avgAccuracy = totalAccuracy / numBatchesProcessed
@@ -211,21 +234,18 @@ class TensorFlowLearnerController(
                     avgValidationAcc = totalValidationAccuracy / numSamplesProcessed
                     avgValidationLoss = totalValidationLoss / numSamplesProcessed
 
-                    countEpochs++
-
-                    val progress = (countEpochs.toFloat() / numEpochs.toFloat()) * 100
 
                     if (onlyValidate)
                         Log.d(
                             MODEL_LOG_TAG,
-                            "Epoch: $countEpochs/$numEpochs || " +
+                            "Epoch: $epochPointer/$numEpochs || " +
                                     "Validation Acc $avgValidationAcc/1 || " +
                                     "Validation Loss $avgValidationLoss"
                         )
                     else
                         Log.d(
                             MODEL_LOG_TAG,
-                            "Epoch: $countEpochs/$numEpochs || Samples:" +
+                            "Epoch: $epochPointer/$numEpochs || Samples:" +
                                     " Accuracy $avgAccuracy/1  || Loss $avgLoss ||" +
                                     " Validation Acc $avgValidationAcc/1 ||" +
                                     " Validation Loss $avgValidationLoss"
@@ -243,12 +263,26 @@ class TensorFlowLearnerController(
                             progress
                         )
 
-                    if (countEpochs == numEpochs)
+                    if (epochPointer == numEpochs)
                         pauseTraining()
 
                 }
             }
         }
+    }
+
+
+    private fun calculateProgress(
+        currentEpoch: Int,
+        totalEpochs: Int,
+        processedSamples: Int,
+        totalSamples: Int
+    ): Float {
+        val samplesPerEpoch = totalSamples.toFloat()
+        val totalSamplesToProcess = samplesPerEpoch * totalEpochs
+        val totalProcessedSamples = ((currentEpoch - 1) * samplesPerEpoch) + processedSamples
+
+        return (totalProcessedSamples / totalSamplesToProcess) * 100f
     }
 
     // Pause the training process.

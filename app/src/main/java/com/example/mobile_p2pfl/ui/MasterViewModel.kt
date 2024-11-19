@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mobile_p2pfl.ai.controller.LearningModel
 import com.example.mobile_p2pfl.ai.controller.TensorFlowLearnerController
+import com.example.mobile_p2pfl.common.GrpcConnectionListener
 import com.example.mobile_p2pfl.common.GrpcEventListener
 import com.example.mobile_p2pfl.common.Values.GRPC_LOG_TAG
 import com.example.mobile_p2pfl.protocol.comms.ProxyClient
@@ -21,17 +22,21 @@ class MasterViewModel : ViewModel() {
     val _connectionState = MutableLiveData<ConnectionState>()
     val connectionState: LiveData<ConnectionState> = _connectionState
 
-    private var grpcClient: ProxyClient = ProxyClient() // BidirectionalClientGRPC()
-
-    fun initializeConnection(context: Context) {
-        grpcClient = ProxyClient(context)
+    private val conectionListener: GrpcConnectionListener = object : GrpcConnectionListener {
+        override fun conected() {
+            _connectionState.postValue(ConnectionState.CONNECTED)
+        }
+        override fun disconected() {
+            _connectionState.postValue(ConnectionState.DISCONNECTED)
+        }
     }
 
-    fun connect(loadingListener: GrpcEventListener) {
-        grpcClient.setEventListener(loadingListener)
+    private var grpcClient: ProxyClient = ProxyClient(conectionListener)
 
+    fun connect(context: Context,eventListener: GrpcEventListener) {
         _connectionState.value = ConnectionState.CONNECTING
         viewModelScope.launch {
+            grpcClient.connect()
             var isConnected = grpcClient.checkConnection()
 
             val timeout = 10_000L  // time limit
@@ -48,17 +53,16 @@ class MasterViewModel : ViewModel() {
             _connectionState.value =
                 if (isConnected) ConnectionState.CONNECTED else ConnectionState.DISCONNECTED
             if (isConnected) {
-                grpcClient.setLearner(modelController) // testing
+                grpcClient.setCommandsHandler(context,modelController,eventListener)
+                mainStream()
             }
         }
     }
 
-    fun sendWeights() {
+    private fun mainStream() {
         viewModelScope.launch {
             try {
-//                grpcClient.sendWeights()
-
-                grpcClient.startMainStream()
+                grpcClient.mainStream()
             } catch (e: Exception) {
                 // errors
                 Log.e(GRPC_LOG_TAG, "Error sending weights: ${e.message}")
@@ -66,19 +70,9 @@ class MasterViewModel : ViewModel() {
         }
     }
 
-    fun initModel() {
-        viewModelScope.launch {
-            try {
-                //grpcClient.initModel()
-            } catch (e: Exception) {
-                // errors
-            }
-        }
-    }
-
     fun disconnect() {
         _connectionState.postValue(ConnectionState.DISCONNECTED)
-//        grpcClient.disconnect()
+        grpcClient.closeClient()
     }
 
     /*******************************MODEL********************************************/
