@@ -6,31 +6,32 @@ import com.example.mobile_p2pfl.common.TrainingSample
 import org.tensorflow.lite.support.image.TensorImage
 
 interface SamplesProcessorInterface {
-    // Preprocesa una imagen para su uso en el modelo
+
+    // Preprocess the image and return a TensorImage object
     fun getProcessedImage(bitmap: Bitmap): TensorImage
 
     /*********************************SAMPLES MANAGER************************************************/
-    // Añade una muestra a la lista
+    // Add a new sample to the list
     fun addSample(bitmap: Bitmap, label: Int)
 
-    // Limpia la lista de muestras
+    // Clear the list of samples
     fun clearSamples()
 
-    // Devuelve el número de muestras en la lista
+    // Return the number of samples in the list
     fun samplesSize(): Int
 
     /*********************************SAVE AND LOAD************************************************/
-    // Guarda las muestras en el almacenamiento interno
+    // Save the list of samples to the internal storage
     fun saveSamplesToInternalStorage(context: Context, title: String)
 
-    // Carga las muestras desde el almacenamiento interno
+    // Load the list of samples from the internal storage
     fun loadSamplesFromInternalStorage(context: Context, title: String)
 
-    // Lista los nombres de los archivos de muestras guardados
+    // List the files in the internal storage directory
     fun listSavedSamples(context: Context): List<String>
 
     /********************************ITERATOR*************************************************/
-    // Crea un iterador para obtener lotes de muestras de entrenamiento o validación
+    // Return an iterator for the list of samples
     fun trainingBatchesIterator(
         trainBatchSize: Int = 1,
         validationSet: Boolean = false

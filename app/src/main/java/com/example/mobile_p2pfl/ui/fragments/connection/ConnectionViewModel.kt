@@ -3,11 +3,7 @@ package com.example.mobile_p2pfl.ui.fragments.connection
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.example.mobile_p2pfl.common.GrpcEventListener
-import com.example.mobile_p2pfl.protocol.comms.ClientGRPC
-import com.example.mobile_p2pfl.ui.ConnectionState
-import kotlinx.coroutines.launch
 
 class ConnectionViewModel : ViewModel() {
 
@@ -47,6 +43,7 @@ class ConnectionViewModel : ViewModel() {
 
     val grpcListener = object : GrpcEventListener {
         override fun startFederatedTraining() {
+            startLoading()
             _streamError.postValue("")
             _startFL.postValue(true)
             _checkIcon.postValue(false)
@@ -85,10 +82,12 @@ class ConnectionViewModel : ViewModel() {
         }
 
         override fun endFederatedTraining() {
+            stopLoading()
             _startFL.postValue(false)
         }
 
         override fun onError(message: String) {
+            stopLoading()
             _streamError.postValue(message)
         }
 

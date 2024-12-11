@@ -26,13 +26,4 @@ interface TensorFlowLearnerInterface : Closeable {
 
     fun restoreModel()
 
-
-
-    fun saveSamplesToInternalStg(samplesFileName: String)
-
-    fun loadSavedSamples(title: String)
-
-    fun listSavedSamplesAdapter(): ArrayAdapter<String>
-
-    fun clearAllSamples()
 }

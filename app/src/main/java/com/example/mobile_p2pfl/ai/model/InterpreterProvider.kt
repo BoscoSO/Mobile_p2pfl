@@ -72,10 +72,12 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
         interpreter = createInterpreter()
     }
 
+    // Return true if the model is initialized
     override fun isModelInitialized(): Boolean {
         return isModelInitialized
     }
 
+    // Set the number of threads for the interpreter
     override fun setNumberOfThreads(numThreads: Int): Boolean {
         if (numThreads == numThreadsOp && interpreter != null)
             return false
@@ -130,8 +132,7 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
 
     /*******************************CONFIG****************************************************/
 
-
-
+    // Return the optimal configuration for the given number of samples
     override fun getOptimalConfigFor(samplesSize: Int): Config =
         when {
             samplesSize <= 32 -> Config.XS
@@ -142,15 +143,12 @@ class InterpreterProvider(private val context: Context, device: Device = Device.
 
     /********************************OTHER****************************************************/
 
+    // Close the interpreter
     fun close() {
         interpreter?.close()
         interpreter = null
         if (delegate is Closeable) {
             delegate.close()
         }
-    }
-
-    companion object {
-        const val IMG_SIZE = 28
     }
 }

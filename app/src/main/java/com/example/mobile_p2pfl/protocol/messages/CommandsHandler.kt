@@ -3,16 +3,12 @@ package com.example.mobile_p2pfl.protocol.messages
 import android.content.Context
 import android.util.Log
 import com.example.mobile_p2pfl.ai.controller.ModelAutoController
-import com.example.mobile_p2pfl.ai.controller.TensorFlowLearnerController
 import com.example.mobile_p2pfl.common.GrpcEventListener
 import com.example.mobile_p2pfl.common.Values.GRPC_LOG_TAG
 import edge_node.NodeOuterClass
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
 class CommandsHandler(
@@ -26,6 +22,7 @@ class CommandsHandler(
         eventListener.startFederatedTraining()
     }
 
+    // Handle incoming messages from the server
     fun handleCommands(message: NodeOuterClass.EdgeMessage): Deferred<NodeOuterClass.EdgeMessage> {
         return coroutineScope.async {
             when (message.cmd) {
@@ -41,6 +38,8 @@ class CommandsHandler(
         }
     }
 
+    /*************************LISTENER**************************************************/
+
     fun notifyError(message: String) {
         eventListener.onError(message)
         eventListener.endFederatedTraining()
@@ -48,9 +47,10 @@ class CommandsHandler(
     fun notifyEnd(){
         eventListener.endFederatedTraining()
     }
+
     /*************************HANDLERS**************************************************/
 
-    //    private val learner : LearningModel = LearningModel(context!!)
+    // Handle vote message from the server
     private fun handleVoteMessage(
         message: NodeOuterClass.EdgeMessage
     ): NodeOuterClass.EdgeMessage {
@@ -65,7 +65,7 @@ class CommandsHandler(
 
         val nodesVoted = candidates.shuffled().take(samples)
         val weights = List(samples) { i ->
-            (Random.nextInt(1001) / (i + 1)).toInt()
+            (Random.nextInt(1001) / (i + 1))
         }
         eventListener.updateProgress(100f)
         eventListener.updateStep("Vote sent, waiting for next step")
@@ -78,7 +78,7 @@ class CommandsHandler(
             .build()
     }
 
-
+    // Handle validate message from the server
     private suspend fun handleValidateMessage(
         message: NodeOuterClass.EdgeMessage
     ): NodeOuterClass.EdgeMessage {
@@ -88,7 +88,6 @@ class CommandsHandler(
             val messageWeights = message.weights
 
             val (loss, accuracy) = learnerController.validate(context, eventListener, messageWeights)
-                ?: Pair(0f, 0f)
 
             val metricsList = listOf("loss", loss.toString(), "accuracy", accuracy.toString())
 
@@ -111,7 +110,7 @@ class CommandsHandler(
         }
     }
 
-
+    // Handle train message from the server
     private suspend fun handleTrainMessage(
         message: NodeOuterClass.EdgeMessage
     ): NodeOuterClass.EdgeMessage {
@@ -124,12 +123,11 @@ class CommandsHandler(
             Log.d(GRPC_LOG_TAG, "Starting training")
             val epochs = message.messageList[0].toInt()
             val (loss, accuracy) = learnerController.train(context, eventListener, messageWeights, epochs)
-                ?: (0.0f to 0.0f)
 
 
             Log.d(GRPC_LOG_TAG, "Training completed with loss $loss and accuracy $accuracy")
             eventListener.updateStep("Sending new weights to server...")
-            val weights = learnerController.getWeightsCkpt(context)
+            val weights = learnerController.getWeights(context)
 
             Log.d(GRPC_LOG_TAG, "weights sent, size: ${weights?.size()}")
 

@@ -1,25 +1,17 @@
 package com.example.mobile_p2pfl.ui.fragments.inference
 
-import android.animation.ValueAnimator
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.DecelerateInterpolator
-import android.view.animation.OvershootInterpolator
-import android.widget.NumberPicker
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.mobile_p2pfl.R
-import com.example.mobile_p2pfl.ai.controller.LearningModel
 import com.example.mobile_p2pfl.common.Recognition
-import com.example.mobile_p2pfl.common.Values.INFERENCE_FRAG_LOG_TAG
 import com.example.mobile_p2pfl.databinding.FragmentInferenceBinding
 import com.example.mobile_p2pfl.ui.MasterViewModel
-import java.io.IOException
 
 class InferenceFragment : Fragment() {
 
@@ -95,8 +87,6 @@ class InferenceFragment : Fragment() {
 
     private fun renderResult(result: Recognition) {
         binding.tvPrediction.text = java.lang.String.valueOf(result.label)
-//
-//        animateToValue(binding.npPrediction,result.label)
 
         binding.tvProbability.text = java.lang.String.valueOf(result.confidence)
         binding.tvTimecost.text = java.lang.String.format(
@@ -104,19 +94,6 @@ class InferenceFragment : Fragment() {
             result.timeCost
         )
     }
-//    private fun animateToValue(numberPicker: NumberPicker, targetValue: Int) {
-//        val animator = ValueAnimator.ofInt(numberPicker.value, targetValue)
-//        animator.duration = 1000 // Duración de la animación en milisegundos
-//        //animator.interpolator = DecelerateInterpolator() // Para un efecto de desaceleración
-//        animator.interpolator = OvershootInterpolator(1.5f)
-//
-//        animator.addUpdateListener { animation ->
-//            val animatedValue = animation.animatedValue as Int
-//            numberPicker.value = animatedValue
-//        }
-//        animator.start()
-//    }
-
 
     private fun clearResult() {
         binding.fpvInferenceDraw.clear()

@@ -18,6 +18,7 @@ class ModelAutoController(
     private val learner: TensorFlowLearnerController
 ) {
 
+    // Helps the proxy to validate the model
     suspend fun validate(context: Context, eventListener: GrpcEventListener, messageWeights: ByteString): Pair<Float, Float> {
         return withContext(Dispatchers.Default) {
             try {
@@ -46,6 +47,7 @@ class ModelAutoController(
         }
     }
 
+    // Helps the proxy to train the model
     suspend fun train(context: Context, eventListener: GrpcEventListener, messageWeights: ByteString, numEpochs: Int):  Pair<Float, Float> {
         return withContext(Dispatchers.Default) {
             try {
@@ -75,8 +77,9 @@ class ModelAutoController(
         }
     }
 
+    // Save the model weights
     private fun saveWeights(context: Context, payload: ByteString ) {
-        var modelOutputStream: FileOutputStream? = null
+        var modelOutputStream: FileOutputStream?
         try {
             val outFile = File(context.filesDir, CHECKPOINT_FILE_NAME)
             modelOutputStream = FileOutputStream(outFile)
@@ -95,19 +98,20 @@ class ModelAutoController(
         }
     }
 
-    fun getWeightsCkpt(context: Context): ByteString?{
+    // Return the model weights
+    fun getWeights(context: Context): ByteString?{
         try {
             val file = File(context.filesDir, CHECKPOINT_FILE_NAME)
             if (!file.exists()) {
                 return null
             }
 
-            Log.d(MODEL_LOG_TAG, "Reading checkpoint file: ${file.absolutePath}")
+            Log.d(GRPC_LOG_TAG, "Reading checkpoint file: ${file.absolutePath}")
             FileInputStream(file).use { inputStream ->
                 return ByteString.readFrom(inputStream)
             }
         } catch (e: Exception) {
-            Log.e(MODEL_LOG_TAG, "Error reading checkpoint file: ${e.message}")
+            Log.e(GRPC_LOG_TAG, "Error reading checkpoint file: ${e.message}")
             return null
         }
     }

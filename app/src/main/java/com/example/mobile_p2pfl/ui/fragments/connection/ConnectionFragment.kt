@@ -2,29 +2,18 @@ package com.example.mobile_p2pfl.ui.fragments.connection
 
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AnimationUtils
 import android.widget.Toast
-
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.mobile_p2pfl.R.anim.pulse2_button
 import com.example.mobile_p2pfl.R.anim.pulse_button
-import com.example.mobile_p2pfl.common.GrpcEventListener
-import com.example.mobile_p2pfl.common.Values.GRPC_LOG_TAG
 import com.example.mobile_p2pfl.databinding.FragmentConnectionBinding
-
 import com.example.mobile_p2pfl.ui.ConnectionState
 import com.example.mobile_p2pfl.ui.MasterViewModel
-import com.google.protobuf.ByteString
-
-import io.grpc.stub.StreamObserver
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 
 class ConnectionFragment : Fragment() {
@@ -65,11 +54,13 @@ class ConnectionFragment : Fragment() {
                 connectionViewModel.setError("Disconected")
                 binding.lyAnimationOn.visibility = View.INVISIBLE
                 binding.lyAnimationOff.visibility = View.VISIBLE
+                connectionViewModel.stopLoading()
                 startPulseOff()
             }
 
             ConnectionState.CONNECTING -> {
                 connectionViewModel.setInfo("Connecting...")
+                connectionViewModel.startLoading()
                 startPulseOn()
             }
 

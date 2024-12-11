@@ -1,9 +1,8 @@
 package com.example.mobile_p2pfl.common
 
 import android.graphics.BitmapFactory
-import com.example.mobile_p2pfl.ai.controller.LearningModel
-import com.example.mobile_p2pfl.protocol.comms.ClientGRPC
-import com.example.mobile_p2pfl.ui.fragments.inference.InferenceFragment
+import com.example.mobile_p2pfl.ai.controller.TensorFlowLearnerController
+import com.example.mobile_p2pfl.protocol.comms.ProxyClient
 import com.example.mobile_p2pfl.ui.fragments.training.TrainingFragment
 import org.tensorflow.lite.support.image.TensorImage
 import java.io.Serializable
@@ -16,10 +15,10 @@ object Constants {
 }
 
 object Values {
-    val MODEL_LOG_TAG: String = LearningModel::class.java.simpleName
-    val GRPC_LOG_TAG: String = ClientGRPC::class.java.simpleName
+    val MODEL_LOG_TAG: String = TensorFlowLearnerController::class.java.simpleName
+    val GRPC_LOG_TAG: String = ProxyClient::class.java.simpleName
 
-    val INFERENCE_FRAG_LOG_TAG: String = InferenceFragment::class.java.simpleName
+
     val TRAINER_FRAG_LOG_TAG: String = TrainingFragment::class.java.simpleName
 }
 

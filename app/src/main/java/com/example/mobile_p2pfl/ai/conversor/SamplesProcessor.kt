@@ -4,7 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.util.Log
-import com.example.mobile_p2pfl.ai.model.InterpreterProvider.Companion.IMG_SIZE
+import com.example.mobile_p2pfl.ai.controller.TensorFlowLearnerController.Companion.IMG_SIZE
 import com.example.mobile_p2pfl.common.TrainingSample
 import com.example.mobile_p2pfl.common.Values.MODEL_LOG_TAG
 import org.tensorflow.lite.support.common.ops.NormalizeOp
@@ -33,6 +33,7 @@ class SamplesProcessor:SamplesProcessorInterface {
         .add(NormalizeOp(0f, 255f))
         .build()
 
+    // Preprocess the image and return a TensorImage object
     override fun getProcessedImage(bitmap: Bitmap): TensorImage {
         val tensorImage = TensorImage.fromBitmap(bitmap)
         return imageProcessor.process(tensorImage)
@@ -40,6 +41,7 @@ class SamplesProcessor:SamplesProcessorInterface {
 
     /*********************************SAMPLES MANAGER************************************************/
 
+    // Add a new sample to the list
     override fun addSample(bitmap: Bitmap, label: Int) {
         val tensorImage = TensorImage.fromBitmap(bitmap)
         val processedTensorImage = imageProcessor.process(tensorImage)
@@ -48,14 +50,17 @@ class SamplesProcessor:SamplesProcessorInterface {
         samples.shuffle()
     }
 
+    // Clear the list of samples
     override fun clearSamples() {
         samples.clear()
     }
 
+    // Return the number of samples in the list
     override fun samplesSize(): Int = samples.size
 
     /*********************************SAVE AND LOAD************************************************/
 
+    // Save samples to internal storage
     override fun saveSamplesToInternalStorage(context: Context, title: String) {
         val directory = File(context.filesDir, "saved_samples")
         if (!directory.exists()) {
@@ -73,6 +78,7 @@ class SamplesProcessor:SamplesProcessorInterface {
         }
     }
 
+    // Load the list of samples from the internal storage
     override fun loadSamplesFromInternalStorage(context: Context, title: String) {
         val directory = File(context.filesDir, "saved_samples")
         val file = File(directory, title)
@@ -99,6 +105,7 @@ class SamplesProcessor:SamplesProcessorInterface {
         this.samples.addAll(samples)
     }
 
+    // List the files in the internal storage directory
     override fun listSavedSamples(context: Context): List<String> {
         val directory = File(context.filesDir, "saved_samples")
         val fileNames =
@@ -112,6 +119,7 @@ class SamplesProcessor:SamplesProcessorInterface {
     }
 
     /******************************AUGMENTATION************************************************/
+    // Apply data augmentation to the samples
     private fun getAugmentedSamples(): List<TrainingSample> {
         val augmentedSamples = mutableListOf<TrainingSample>()
 
@@ -136,6 +144,7 @@ class SamplesProcessor:SamplesProcessorInterface {
         return augmentedSamples
     }
 
+    // Flip the image horizontally or vertically
     private fun flip(imageBuffer: ByteBuffer, sx: Float = -1f, sy: Float = 1f): ByteBuffer {
         val bitmap = Bitmap.createBitmap(IMG_SIZE, IMG_SIZE, Bitmap.Config.ARGB_8888)
         imageBuffer.rewind()
@@ -158,6 +167,7 @@ class SamplesProcessor:SamplesProcessorInterface {
     }
 
     /********************************ITERATOR*************************************************/
+    // Return an iterator for the list of samples
     override fun trainingBatchesIterator(
         trainBatchSize: Int,
         validationSet: Boolean
