@@ -150,7 +150,7 @@ class TensorFlowLearnerController(
                     Handler(Looper.getMainLooper()).post {
                         Log.d(MODEL_LOG_TAG, "Training paused")
                         eventListener?.onLoadingFinished()
-                        //saveModel()
+                        saveModel()
                     }
                 }
             }.start()

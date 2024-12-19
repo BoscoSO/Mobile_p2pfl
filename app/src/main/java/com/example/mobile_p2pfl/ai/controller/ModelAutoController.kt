@@ -67,7 +67,7 @@ class ModelAutoController(
 
                 eventListener.updateResults("Training results", res.first, res.second)
                 eventListener.updateStep("Saving and sending back...")
-                learner.saveModel()
+                //learner.saveModel()
                 learner.clearAllSamples()
 
                 res
