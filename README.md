@@ -119,6 +119,6 @@ netsh advfirewall firewall delete rule name="Allow GRPC 50051"
 4. Press any key in the proxy terminal to initiate collaborative training.
 5. Monitor the execution in real-time using Android Logs and the proxy terminal. The app also displays progress on the same screen where connections are made.
 
----
+## 📜 License
 
-```
+[GNU General Public License, Version 3.0](https://www.gnu.org/licenses/gpl-3.0.en.html)
